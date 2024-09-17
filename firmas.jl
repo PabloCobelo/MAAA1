@@ -1,6 +1,11 @@
-
-
-
+# ----------------------------------------------------------------------------------------------
+# ------------------------------------- Ejercicio 1 --------------------------------------------
+# ----------------------------------------------------------------------------------------------
+#HOLA, ESTO ESTA ESCRITO POR HUGO FOLE ABELLAS
+function prueba(entrada::String)
+    #
+    #
+end
 function fileNamesFolder(folderName::String, extension::String)
     #
     # Codigo a desarrollar
