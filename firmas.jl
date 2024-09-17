@@ -1,15 +1,18 @@
-# hola----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 # ------------------------------------- Ejercicio 1 --------------------------------------------
 # ----------------------------------------------------------------------------------------------
 
 using FileIO
 using JLD2
 using Images
-
-using JLD2
 using FilePathsBase
 
 function fileNamesFolder(folderName::String, extension::String)
+    # Verificamos si el nombre de carpeta es válido
+    if !isdir(folderName)
+        error("El nombre de carpeta NO es valido.")
+    end
+
     # Convertir la extensión a mayúsculas
     extension = uppercase(extension)
     
@@ -23,22 +26,36 @@ function fileNamesFolder(folderName::String, extension::String)
 end;
 
 
-
-
 function loadDataset(datasetName::String, datasetFolder::String;
     datasetType::DataType=Float32)
-    #
-    # Codigo a desarrollar
-    #
+
+    fileName = joinpath(datasetFolder, datasetName * ".tsv");
+    if !isfile(fileName)
+        return nothing  # Si no se encuentra el archivo en cuestión, esta función devolverá nothing.
+    end
+
+    dataset = readdlm(fileName, '\t');
+    encabezados = dataset[1,:];
+    target_col = findall(x -> x == "target", encabezados)[1];
+    inputs = convert(datasetType, dataset[2:end, setdiff(1:end, target_col)]);
+    #REVISAR SI ESTÁ COMPLETA
 end;
 
 
 
 function loadImage(imageName::String, datasetFolder::String;
     datasetType::DataType=Float32, resolution::Int=128)
-    #
-    # Codigo a desarrollar
-    #
+    imageName = joinpath(datasetFolder, imageName * ".tif");
+    if !isfile(imageName)
+        return nothing  # Si no se encuentra el archivo en cuestión, esta función devolverá nothing.
+    end
+    image = load(imageName);
+    image = imresize(image, (resolution, resolution));
+    image = convert(datasetType, Gray.(image));
+
+    #CAMBIAR TIPO DE MATRIZ???????????
+
+    return image;
 end;
 
 
@@ -53,9 +70,15 @@ end;
 
 function loadImagesNCHW(datasetFolder::String;
     datasetType::DataType=Float32, resolution::Int=128)
-    #
-    # Codigo a desarrollar
-    #
+    image = fileNamesFolder(datasetFolder, "tif");
+    # Hacerun broadcast de la función loadImage, (aplicar una función a cada elemento de un array)
+    images = loadImage.(imageNames, Ref(datasetFolder); datasetType=datasetType, resolution=resolution)
+    
+    # Convertir las imágenes al formato NCHW
+    nchw_images = convertImagesNCHW(images)
+    
+    # Devolver las imágenes en formato NCHW
+    return nchw_images
 end;
 
 
