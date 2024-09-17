@@ -1,11 +1,25 @@
+# ----------------------------------------------------------------------------------------------
+# ------------------------------------- Ejercicio 1 --------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
-
+using FileIO
+using Images
+using JLD2
+using FilePathsBase
 
 function fileNamesFolder(folderName::String, extension::String)
-    #
-    # Codigo a desarrollar
-    #
+    # Convertir la extensión a mayúsculas
+    extension = uppercase(extension)
+    
+    # Obtener los nombres de los archivos que terminan con la extensión dada
+    fileNames = filter(f -> endswith(uppercase(f), ".$extension"), readdir(folderName))
+    
+    # Eliminar la extensión de los nombres de archivo
+    fileNamesWithoutExtension = map(f -> replace(f, r"\.$extension$" => ""), fileNames)
+    
+    return fileNamesWithoutExtension
 end;
+
 
 
 
