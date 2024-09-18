@@ -309,6 +309,7 @@ function joinBatches(batch1::Batch, batch2::Batch)
     # Codigo a desarrollar
     #
 end;
+z = np.matmul(x, w.T) + bias
 
 
 function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=false)
