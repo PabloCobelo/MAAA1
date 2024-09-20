@@ -26,38 +26,60 @@ function fileNamesFolder(folderName::String, extension::String)
 end;
 
 
-function loadDataset(datasetName::String, datasetFolder::String;
-    datasetType::DataType=Float32)
+using DelimitedFiles
 
-    fileName = joinpath(datasetFolder, datasetName * ".tsv");
-    if !isfile(fileName)
-        return nothing  # Si no se encuentra el archivo en cuestión, esta función devolverá nothing.
-    end
+    function loadDataset(datasetName::String, datasetFolder::String; datasetType::DataType=Float32)
+        # Construir el nombre completo del archivo
+        fileName = joinpath(datasetFolder, datasetName * ".tsv")
+    
+        # Verificar si el archivo existe
+        if !isfile(fileName)
+            return nothing  # Si no se encuentra el archivo, retornar nothing
+        end
+    
+        # Cargar el archivo delimitado por tabulaciones
+        dataset = readdlm(fileName, '\t')
+    
+        # Obtener los encabezados (primera fila)
+        encabezados = dataset[1, :]
+    
+        # Encontrar la columna correspondiente al "target"
+        target_col = findall(x -> x == "target", encabezados)[1]
+    
+        # Extraer las entradas, excluyendo la columna del "target"
+        inputs = dataset[2:end, setdiff(1:end, target_col)]
+        inputs = convert(Matrix{datasetType}, inputs)
+    
+        # Extraer la columna de "targets" y convertirla a booleanos
+        targets = dataset[2:end, target_col]
+        targets = convert(Vector{Bool}, targets .== 1)
+    
+        # Retornar las entradas y las salidas
+        return (inputs, targets)
+    end;
 
-    dataset = readdlm(fileName, '\t');
-    encabezados = dataset[1,:];
-    target_col = findall(x -> x == "target", encabezados)[1];
-    inputs = convert(datasetType, dataset[2:end, setdiff(1:end, target_col)]);
-    #REVISAR SI ESTÁ COMPLETA
-end;
 
-
-
-function loadImage(imageName::String, datasetFolder::String;
-    datasetType::DataType=Float32, resolution::Int=128)
-    imageName = joinpath(datasetFolder, imageName * ".tif");
-    if !isfile(imageName)
-        return nothing  # Si no se encuentra el archivo en cuestión, esta función devolverá nothing.
-    end
-    image = load(imageName);
-    image = imresize(image, (resolution, resolution));
-    image = convert(datasetType, Gray.(image));
-
-    #CAMBIAR TIPO DE MATRIZ???????????
-
-    return image;
-end;
-
+    function loadImage(imageName::String, datasetFolder::String; datasetType::DataType=Float32, resolution::Int=128)
+        # Construir el nombre completo del archivo
+        imagePath = joinpath(datasetFolder, imageName * ".tif")
+        
+        # Verificar si el archivo existe
+        if !isfile(imagePath)
+            return nothing  # Si no se encuentra el archivo, retornar nothing
+        end
+    
+        # Cargar la imagen
+        image = load(imagePath)
+        
+        # Redimensionar la imagen
+        image_resized = imresize(image, (resolution, resolution))
+    
+        # Convertir los píxeles de la imagen a escala de grises y luego al tipo numérico especificado
+        image_gray = Gray.(image_resized)
+        image_converted = map(x -> convert(datasetType, float(x)), image_gray)
+    
+        return image_converted
+    end;
 
 function convertImagesNCHW(imageVector::Vector{<:AbstractArray{<:Real,2}})
     imagesNCHW = Array{eltype(imageVector[1]), 4}(undef, length(imageVector), 1, size(imageVector[1],1), size(imageVector[1],2));
@@ -87,11 +109,41 @@ showImage(imagesNCHW ::AbstractArray{<:Real,4}                                  
 showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Real,4}) = display(Gray.(vcat(hcat([imagesNCHW1[i,1,:,:] for i in 1:size(imagesNCHW1,1)]...), hcat([imagesNCHW2[i,1,:,:] for i in 1:size(imagesNCHW2,1)]...))));
 
 
-
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
-    #
-    # Codigo a desarrollar
-    #
+    # Cargar el archivo MNIST.jld2
+    filePath = joinpath(datasetFolder, "MNIST.jld2")
+    if !isfile(filePath)
+        return nothing  # Si no se encuentra el archivo, devolver nothing
+    end
+
+    # Cargar los datos de entrenamiento y test desde el archivo
+    dataset = load(filePath)
+    train_images = dataset["train"]["imgs"]
+    train_labels = dataset["train"]["labels"]
+    test_images = dataset["test"]["imgs"]
+    test_labels = dataset["test"]["labels"]
+
+    # Filtrar por las etiquetas especificadas
+    function filter_labels(images, labels, target_labels)
+        # Cambiar las etiquetas no especificadas a -1 si hay -1 en labels
+        if -1 in target_labels
+            labels[.!in.(labels, [setdiff(target_labels, -1)])] .= -1
+        end
+        # Filtrar las imágenes con etiquetas dentro de las especificadas
+        indices = in.(labels, target_labels)
+        return images[indices, :], labels[indices]
+    end
+
+    # Aplicar el filtro a las imágenes y etiquetas de entrenamiento y test
+    train_images_filtered, train_labels_filtered = filter_labels(train_images, train_labels, labels)
+    test_images_filtered, test_labels_filtered = filter_labels(test_images, test_labels, labels)
+
+    # Convertir las imágenes a formato NCHW y al tipo de dato especificado
+    train_images_nchw = convertImagesNCHW(train_images_filtered, datasetType)
+    test_images_nchw = convertImagesNCHW(test_images_filtered, datasetType)
+
+    # Retornar las imágenes y etiquetas filtradas
+    return (train_images_nchw, train_labels_filtered, test_images_nchw, test_labels_filtered)
 end;
 
 
@@ -109,18 +161,48 @@ end
 
 
 function cyclicalEncoding(data::AbstractArray{<:Real,1})
-    #
-    # Codigo a desarrollar
-    #
-end;
+    # Obtener el intervalo normalizado entre 0 y 1
+    normalized_data = intervalDiscreteVector(data)
 
+    # Mapear los valores normalizados al intervalo [0, 2π]
+    angles = normalized_data .* 2π
+
+    # Calcular los senos y cosenos de los ángulos
+    sin_values = sin.(angles)
+    cos_values = cos.(angles)
+
+    # Devolver los resultados como una tupla (senos, cosenos)
+    return (sin_values, cos_values)
+end
 
 
 function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=Float32)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    # Cargar los archivos de datos y etiquetas
+    data_file = joinpath(datasetFolder, "elec2_data.dat")
+    label_file = joinpath(datasetFolder, "elec2_label.dat")
+    
+    # Leer los datos
+    data = readdlm(data_file)
+    labels = readdlm(label_file)
+    
+    # Eliminar las columnas 1 (date) y 4 (nswprice)
+    data_processed = data[:, setdiff(1:size(data, 2), [1, 4])]
+    
+    # Aplicar cyclicalEncoding a la primera columna (period)
+    sin_vals, cos_vals = cyclicalEncoding(data_processed[:, 1])
+    
+    # Concatenar senos y cosenos como las primeras columnas
+    inputs = hcat(sin_vals, cos_vals, data_processed[:, 2:end])
+    
+    # Convertir los datos al tipo especificado (datasetType)
+    inputs_converted = convert(Matrix{datasetType}, inputs)
+    
+    # Convertir las etiquetas a booleano
+    targets = vec(Bool.(labels))
+    
+    # Devolver la matriz de entradas y el vector de salidas deseadas
+    return (inputs_converted, targets)
+end
 
 
 
