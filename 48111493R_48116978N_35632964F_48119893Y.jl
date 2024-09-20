@@ -20,7 +20,7 @@ function fileNamesFolder(folderName::String, extension::String)
     fileNames = filter(f -> endswith(uppercase(f), ".$extension"), readdir(folderName))
     
     # Eliminar la extensión de los nombres de archivo
-    fileNamesWithoutExtension = map(f -> replace(f, r"\.$extension$" => ""), fileNames)
+    fileNamesWithoutExtension = splitext.(fileNames)[:, 1]
     
     return fileNamesWithoutExtension
 end;
@@ -72,7 +72,7 @@ function loadImagesNCHW(datasetFolder::String;
     datasetType::DataType=Float32, resolution::Int=128)
     image = fileNamesFolder(datasetFolder, "tif");
     # Hacerun broadcast de la función loadImage, (aplicar una función a cada elemento de un array)
-    images = loadImage.(imageNames, Ref(datasetFolder); datasetType=datasetType, resolution=resolution)
+    images = loadImage.(image, Ref(datasetFolder); datasetType=datasetType, resolution=resolution)
     
     # Convertir las imágenes al formato NCHW
     nchw_images = convertImagesNCHW(images)
@@ -309,7 +309,6 @@ function joinBatches(batch1::Batch, batch2::Batch)
     # Codigo a desarrollar
     #
 end;
-z = np.matmul(x, w.T) + bias
 
 
 function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=false)
