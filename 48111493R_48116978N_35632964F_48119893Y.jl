@@ -20,10 +20,11 @@ function fileNamesFolder(folderName::String, extension::String)
     fileNames = filter(f -> endswith(uppercase(f), ".$extension"), readdir(folderName))
     
     # Eliminar la extensión de los nombres de archivo
-    fileNamesWithoutExtension = splitext.(fileNames)[:, 1]
+    fileNamesWithoutExtension = [splitext(f)[1] for f in fileNames]
     
     return fileNamesWithoutExtension
 end;
+#println(typeof(fileNamesFolder("datasets", "tsv")), " ", fileNamesFolder("datasets", "tsv"))
 
 
 using DelimitedFiles
