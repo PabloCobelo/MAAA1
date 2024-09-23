@@ -1,20 +1,15 @@
 # ----------------------------------------------------------------------------------------------
 # ------------------------------------- Ejercicio 1 --------------------------------------------
 # ----------------------------------------------------------------------------------------------
-<<<<<<< HEAD
-#HOLA, ESTO ESTA ESCRITO POR HUGO FOLE ABELLAS
-function prueba(entrada::String)
-    #
-    #
-end
-=======
+
 
 using FileIO
 using JLD2
 using Images
 using FilePathsBase
+Pkg.add("FilePathsBase")
 
->>>>>>> eb174216a924676f476f3534a268fe5d651a801a
+
 function fileNamesFolder(folderName::String, extension::String)
     # Verificamos si el nombre de carpeta es válido
     if !isdir(folderName)
