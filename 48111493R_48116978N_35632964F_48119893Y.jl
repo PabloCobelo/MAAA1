@@ -161,7 +161,7 @@ function intervalDiscreteVector(data::AbstractArray{<:Real,1})
     # Si todas las diferencias son multiplos exactos (valores enteros) de esa diferencia, entonces es un vector de valores discretos
     isInteger(x::Float64, tol::Float64) = abs(round(x)-x) < tol
     return all(isInteger.(differences./minDifference, 1e-3)) ? minDifference : 0.
-end
+end;
 
 
 function cyclicalEncoding(data::AbstractArray{<:Real,1})
@@ -185,7 +185,7 @@ function cyclicalEncoding(data::AbstractArray{<:Real,1})
 
     # Devolver los resultados como una tupla (senos, cosenos)
     return (sin_values, cos_values)
-end
+end;
 
 
 function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=Float32)
@@ -214,7 +214,7 @@ function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=
     
     # Devolver la matriz de entradas y el vector de salidas deseadas
     return (inputs_converted, targets)
-end
+end;
 
 
 
@@ -227,10 +227,11 @@ using Flux
 indexOutputLayer(ann::Chain) = length(ann) - (ann[end]==softmax);
 
 function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
-    #
-    # Codigo a desarrollar
-    #
+    return numOutputs == 2 ? Chain(Dense(numInputs, numOutputs, σ)) : Chain(Dense(numInputs, numOutputs, identity), softmax)
 end;
+
+println(newClassCascadeNetwork(3, 2))
+println(newClassCascadeNetwork(3, 4))
 
 function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ)
     #
