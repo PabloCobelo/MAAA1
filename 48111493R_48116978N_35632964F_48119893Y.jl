@@ -7,7 +7,7 @@ using FileIO
 using JLD2
 using Images
 using FilePathsBase
-Pkg.add("FilePathsBase")
+
 
 
 function fileNamesFolder(folderName::String, extension::String)
@@ -165,15 +165,23 @@ end
 
 
 function cyclicalEncoding(data::AbstractArray{<:Real,1})
-    # Obtener el intervalo normalizado entre 0 y 1
-    normalized_data = intervalDiscreteVector(data)
+    #Obtener valor de m
+    m = intervalDiscreteVector(data)
 
-    # Mapear los valores normalizados al intervalo [0, 2π]
-    angles = normalized_data .* 2π
+    #Obtener valores minimo y maximo de los datos para normalizar
+    maximo = maximum(data)
+    minimo = minimum(data)
 
-    # Calcular los senos y cosenos de los ángulos
+    #Normalizar los datos
+    normalized_data = (data .- minimo) ./ (maximo - minimo + m)
+
+    #Mapear a intervalo [0,2pi]
+    angles = normalized_data .* (2*pi)
+
+    #Calcular senos y cosenos
+
     sin_values = sin.(angles)
-    cos_values = cos.(angles)
+    cos_values = cos.(values)
 
     # Devolver los resultados como una tupla (senos, cosenos)
     return (sin_values, cos_values)
