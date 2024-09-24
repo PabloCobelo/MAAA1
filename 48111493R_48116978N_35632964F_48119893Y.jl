@@ -91,8 +91,7 @@ function convertImagesNCHW(imageVector::Vector{<:AbstractArray{<:Real,2}})
 end;
 
 
-function loadImagesNCHW(datasetFolder::String;
-    datasetType::DataType=Float32, resolution::Int=128)
+function loadImagesNCHW(datasetFolder::String; datasetType::DataType=Float32, resolution::Int=128)
     image = fileNamesFolder(datasetFolder, "tif");
     # Hacerun broadcast de la función loadImage, (aplicar una función a cada elemento de un array)
     images = loadImage.(image, Ref(datasetFolder); datasetType=datasetType, resolution=resolution)
@@ -110,42 +109,39 @@ showImage(imagesNCHW ::AbstractArray{<:Real,4}                                  
 showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Real,4}) = display(Gray.(vcat(hcat([imagesNCHW1[i,1,:,:] for i in 1:size(imagesNCHW1,1)]...), hcat([imagesNCHW2[i,1,:,:] for i in 1:size(imagesNCHW2,1)]...))));
 
 
+
+
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
-    # Cargar el archivo MNIST.jld2
-    filePath = joinpath(datasetFolder, "MNIST.jld2")
-    if !isfile(filePath)
-        return nothing  # Si no se encuentra el archivo, devolver nothing
-    end
+    # Cargar el dataset completo desde el archivo MNIST.jld2
+    dataset_file=fileNamesFolder(datasetFolder, "JLD2");
+    dataset = load(dataset_file)
 
-    # Cargar los datos de entrenamiento y test desde el archivo
-    dataset = load(filePath)
-    train_images = dataset["train"]["imgs"]
-    train_labels = dataset["train"]["labels"]
-    test_images = dataset["test"]["imgs"]
-    test_labels = dataset["test"]["labels"]
+    # Extraer los datos de entrenamiento y test
+    train_imgs = dataset["train_imgs"]
+    train_labels = dataset["train_labels"]
+    test_imgs = dataset["test_imgs"]
+    test_labels = dataset["test_labels"]
 
-    # Filtrar por las etiquetas especificadas
-    function filter_labels(images, labels, target_labels)
-        # Cambiar las etiquetas no especificadas a -1 si hay -1 en labels
-        if -1 in target_labels
-            labels[.!in.(labels, [setdiff(target_labels, -1)])] .= -1
-        end
-        # Filtrar las imágenes con etiquetas dentro de las especificadas
-        indices = in.(labels, target_labels)
-        return images[indices, :], labels[indices]
-    end
+    # Modificar los targets para etiquetas no contempladas en labels
+    train_labels[.!in.(train_labels, [setdiff(labels, -1)])] .= -1
+    test_labels[.!in.(test_labels, [setdiff(labels, -1)])] .= -1
 
-    # Aplicar el filtro a las imágenes y etiquetas de entrenamiento y test
-    train_images_filtered, train_labels_filtered = filter_labels(train_images, train_labels, labels)
-    test_images_filtered, test_labels_filtered = filter_labels(test_images, test_labels, labels)
+    # Seleccionar las imágenes y etiquetas deseadas
+    train_indices = in.(train_labels, [labels])
+    test_indices = in.(test_labels, [labels])
 
-    # Convertir las imágenes a formato NCHW y al tipo de dato especificado
-    train_images_nchw = convertImagesNCHW(train_images_filtered, datasetType)
-    test_images_nchw = convertImagesNCHW(test_images_filtered, datasetType)
+    # Convertir las imágenes a formato NCHW (esto lo implementas en tu propia función)
+    train_imgs_nchw = convertImagesNCHW(train_imgs[train_indices])
+    test_imgs_nchw = convertImagesNCHW(test_imgs[test_indices])
 
-    # Retornar las imágenes y etiquetas filtradas
-    return (train_images_nchw, train_labels_filtered, test_images_nchw, test_labels_filtered)
-end;
+    # Filtrar las etiquetas correspondientes
+    train_labels_filtered = train_labels[train_indices]
+    test_labels_filtered = test_labels[test_indices]
+
+    # Devolver la tupla con el formato correcto
+    return (train_imgs_nchw, train_labels_filtered, test_imgs_nchw, test_labels_filtered)
+end
+
 
 
 function intervalDiscreteVector(data::AbstractArray{<:Real,1})
