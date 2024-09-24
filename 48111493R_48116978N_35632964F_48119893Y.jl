@@ -332,7 +332,6 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     return trainingLosses  # Devolver el vector de pérdidas (loss) durante el entrenamiento
 end;  
 
-#VINICIUS MONO
 
 function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
