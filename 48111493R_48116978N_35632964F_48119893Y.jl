@@ -342,14 +342,15 @@ end;
 
 
 function stepHopfield(ann::HopfieldNet, S::AbstractArray{<:Real,1})
-    #
-    # Codigo a desarrollar
-    #
+    S_float = Float32.(S)
+    siguiente = ann * S_float
+    final = sign.(siguiente)
+    return Float32.(final)
 end;
 function stepHopfield(ann::HopfieldNet, S::AbstractArray{<:Bool,1})
-    #
-    # Codigo a desarrollar
-    #
+    convertido = (2. .*S) .- 1
+    resultado_real = stepHopfield(ann, convertido)
+    return resultado_real .>= 0
 end;
 
 
