@@ -333,9 +333,16 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     transferFunction::Function=σ,
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-    #
-    # Codigo a desarrollar
-    #
+     
+    trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
+    transferFunction::Function=σ,
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
+    
+    num_inputs = size(trainingDataset[1],2)
+    RNA = newClassCascadeNetwork(num_inputs,2)
+
+    trainClassANN()
+    
 end;
 
 function trainClassCascadeANN(maxNumNeurons::Int,
