@@ -324,19 +324,19 @@ HopfieldNet = Array{Float32,2}
 
 function trainHopfield(trainingSet::AbstractArray{<:Real,2})
     num_instances, num_atributes = size(trainingSet)
-    HopfieldNet = zeros(Float32, num_atributes, num_atributes)
-    HopfieldNet .= (trainingSet' * trainingSet) ./ num_instances
+    matriz = zeros(Float32, num_atributes, num_atributes)
+    matriz .= (trainingSet' * trainingSet) ./ num_instances
     for i in 1:num_atributes
-        HopfieldNet[i, i] = 0.0
+        matriz[i, i] = 0.0
     end
-    return HopfieldNet
+    return matriz
 end;
 function trainHopfield(trainingSet::AbstractArray{<:Bool,2})
     convertido = (2. .*trainingSet) .- 1 
     return trainHopfield(convertido)
 end;
 function trainHopfield(trainingSetNCHW::AbstractArray{<:Bool,4})
-    convertido2 = trainHopfield(HopfieldNet, reshape(trainingSetNCHW, size(trainingSetNCHW,1), size(trainingSetNCHW,3)*size(trainingSetNCHW,4)));
+    convertido2 = reshape(trainingSetNCHW, size(trainingSetNCHW, 1), size(trainingSetNCHW, 2) * size(trainingSetNCHW, 3) * size(trainingSetNCHW, 4))
     return trainHopfield(convertido2)
 end;
 
