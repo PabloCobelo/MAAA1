@@ -174,7 +174,7 @@ function cyclicalEncoding(data::AbstractArray{<:Real,1})
     #Calcular senos y cosenos
 
     sin_values = sin.(angles)
-    cos_values = cos.(values)
+    cos_values = cos.(angles)
 
     # Devolver los resultados como una tupla (senos, cosenos)
     return (sin_values, cos_values)
