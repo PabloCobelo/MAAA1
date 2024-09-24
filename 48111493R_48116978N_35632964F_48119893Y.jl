@@ -114,7 +114,7 @@ showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Rea
 
 
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
-end
+end;
 
 
 function intervalDiscreteVector(data::AbstractArray{<:Real,1})
