@@ -215,8 +215,6 @@ end
 # ------------------------------------- Ejercicio 2 --------------------------------------------
 # ----------------------------------------------------------------------------------------------
 
-using Flux
-using FLux.Losses
 
 indexOutputLayer(ann::Chain) = length(ann) - (ann[end]==softmax);
 
@@ -235,43 +233,7 @@ function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
 end;
 
 function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ)
-    outputLayer = previousANN[ indexOutputLayer(previousANN) ];
-    previousLayers = previousANN[1:(indexOutputLayer(previousANN)-1)];
-
-    numInputsOutputLayer = size(outputLayer.weight, 2);
-    numOutputsOutputLayer = size(outputLayer.weight, 1); 
-    
-    # Crear la nueva red con una neurona extra en cascada
-    nuevaCapa = SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx, x) -> vcat(x, mx));
-    
-    # Ver si el problema es de 2 o más clases
-    if numOutputsOutputLayer == 1  # Caso de 2 clases
-        ann = Chain(
-            previousLayers...,
-            nuevaCapa,
-            Dense(numOutputsOutputLayer + 1, 1, σ));
-    else  # Caso de más de 2 clases
-        ann = Chain(
-            previousLayers...,
-            nuevaCapa,
-            Dense(numOutputsOutputLayer + 1, numOutputsOutputLayer, identity), softmax);
-    end;
-    
-    # Modificar los pesos y bias de la capa de salida
-    # Copiar los pesos de la red anterior, ajustando la nueva columna
-    newWeights = zeros(numOutputsOutputLayer, numInputsOutputLayer + 1);  # Crear matriz de pesos con una columna extra
-    newWeights[:, 1:numInputsOutputLayer] .= outputLayer.weight;  # Copiar los pesos antiguos
-    newWeights[:, end] .= 0;  # Poner la última columna a 0 para la nueva neurona
-
-    # Copiar el bias de la capa anterior
-    newBias = outputLayer.bias;  # El bias permanece igual
-    
-    # Asignar los pesos y bias a la capa de salida
-    ann[end-1].weight .= newWeights;
-    ann[end-1].bias .= newBias;
-    
-    return ann;  # Devolver la nueva red
-end;
+end;   
 
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
