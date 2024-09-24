@@ -111,7 +111,41 @@ showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Rea
 
 
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
-end
+    # Cargar el archivo MNIST.jld2
+    filePath = joinpath(datasetFolder, "MNIST.jld2")
+    if !isfile(filePath)
+        return nothing  # Si no se encuentra el archivo, devolver nothing
+    end
+
+    # Cargar los datos de entrenamiento y test desde el archivo
+    dataset = load(filePath)
+    train_images = dataset["train"]["imgs"]
+    train_labels = dataset["train"]["labels"]
+    test_images = dataset["test"]["imgs"]
+    test_labels = dataset["test"]["labels"]
+
+    # Filtrar por las etiquetas especificadas
+    function filter_labels(images, labels, target_labels)
+        # Cambiar las etiquetas no especificadas a -1 si hay -1 en labels
+        if -1 in target_labels
+            labels[.!in.(labels, [setdiff(target_labels, -1)])] .= -1
+        end
+        # Filtrar las imágenes con etiquetas dentro de las especificadas
+        indices = in.(labels, target_labels)
+        return images[indices, :], labels[indices]
+    end
+
+    # Aplicar el filtro a las imágenes y etiquetas de entrenamiento y test
+    train_images_filtered, train_labels_filtered = filter_labels(train_images, train_labels, labels)
+    test_images_filtered, test_labels_filtered = filter_labels(test_images, test_labels, labels)
+
+    # Convertir las imágenes a formato NCHW y al tipo de dato especificado
+    train_images_nchw = convertImagesNCHW(train_images_filtered, datasetType)
+    test_images_nchw = convertImagesNCHW(test_images_filtered, datasetType)
+
+    # Retornar las imágenes y etiquetas filtradas
+    return (train_images_nchw, train_labels_filtered, test_images_nchw, test_labels_filtered)
+end;
 
 
 function intervalDiscreteVector(data::AbstractArray{<:Real,1})
@@ -144,12 +178,11 @@ function cyclicalEncoding(data::AbstractArray{<:Real,1})
     #Calcular senos y cosenos
 
     sin_values = sin.(angles)
-    cos_values = cos.(angles)
+    cos_values = cos.(values)
 
     # Devolver los resultados como una tupla (senos, cosenos)
     return (sin_values, cos_values)
 end;
-
 
 
 function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=Float32)
