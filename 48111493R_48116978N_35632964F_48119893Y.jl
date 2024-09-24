@@ -362,20 +362,23 @@ end;
 HopfieldNet = Array{Float32,2}
 
 function trainHopfield(trainingSet::AbstractArray{<:Real,2})
-    #
-    # Codigo a desarrollar
-    #
+    num_instances, num_atributes = size(trainingSet)
+    HopfieldNet = zeros(Float32, num_atributes, num_atributes)
+    HopfieldNet .= (trainingSet' * trainingSet) ./ num_instances
+    for i in 1:num_atributes
+        HopfieldNet[i, i] = 0.0
+    end
+    return HopfieldNet
 end;
 function trainHopfield(trainingSet::AbstractArray{<:Bool,2})
-    #
-    # Codigo a desarrollar
-    #
+    convertido = (2. .*trainingSet) .- 1 
+    return trainHopfield(convertido)
 end;
 function trainHopfield(trainingSetNCHW::AbstractArray{<:Bool,4})
-    #
-    # Codigo a desarrollar
-    #
+    convertido2 = trainHopfield(HopfieldNet, reshape(trainingSetNCHW, size(trainingSetNCHW,1), size(trainingSetNCHW,3)*size(trainingSetNCHW,4)));
+    return trainHopfield(convertido2)
 end;
+
 
 function stepHopfield(ann::HopfieldNet, S::AbstractArray{<:Real,1})
     #
