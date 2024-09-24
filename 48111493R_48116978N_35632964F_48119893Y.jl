@@ -111,6 +111,7 @@ showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Rea
 
 
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
+<<<<<<< HEAD
     # Cargar el archivo MNIST.jld2
     filePath = joinpath(datasetFolder, "MNIST.jld2")
     if !isfile(filePath)
@@ -145,6 +146,8 @@ function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:
 
     # Retornar las imágenes y etiquetas filtradas
     return (train_images_nchw, train_labels_filtered, test_images_nchw, test_labels_filtered)
+=======
+>>>>>>> 71256a0696cec652dd7d82e71776887e9644ecbb
 end;
 
 
