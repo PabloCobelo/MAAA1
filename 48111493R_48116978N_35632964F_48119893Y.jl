@@ -377,13 +377,12 @@ function runHopfield(ann::HopfieldNet, datasetNCHW::AbstractArray{<:Real,4})
 end;
 
 
-
-
-
+using Random
 function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
-    #
-    # Codigo a desarrollar
-    #
+    noiseSet = copy(datasetNCHW)
+    # Seleccionar los índices de las imágenes a modificar
+    indices = shuffle(1:length(noiseSet))[1:Int(round(length(noiseSet)*ratioNoise))];
+    noiseSet[indices] .= .!noiseSet[indices]
 end;
 
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
