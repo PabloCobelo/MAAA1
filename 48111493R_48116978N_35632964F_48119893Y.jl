@@ -220,7 +220,6 @@ end
 indexOutputLayer(ann::Chain) = length(ann) - (ann[end]==softmax);
 
 function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
-    ann = Chain()  # Crear el objeto Chain
     
     if numOutputs == 2
         ann = Chain(Dense(numInputs, 1, σ))
