@@ -140,7 +140,7 @@ function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:
     test_labels_filtered = test_labels[test_indices]
 
     # Devolver la tupla con el formato correcto
-    return (train_imgs_nchw, train_labels_filtered, test_imgs_nchw, test_labels_filtered)
+    return (train_imgs_nchw, train_labels_filtered, test_imgs_nchw, test_labels_filtered)3
 end
 
 
@@ -221,13 +221,7 @@ indexOutputLayer(ann::Chain) = length(ann) - (ann[end]==softmax);
 
 function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
     
-    if numOutputs == 2
-        ann = Chain(Dense(numInputs, 1, σ))
 
-    elseif numOutputs > 2
-        ann = Chain(Dense(numInputs, numOutputs, identity), softmax)
-
-    end
     
     return ann  
 end;
