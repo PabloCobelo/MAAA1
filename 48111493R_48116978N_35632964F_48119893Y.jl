@@ -114,7 +114,7 @@ showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Rea
 
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
     # Cargar el dataset completo desde el archivo MNIST.jld2
-    dataset_file=fileNamesFolder(datasetFolder, "JLD2");
+    dataset_file=joinpath(datasetFolder, "MNIST.jld2");
     dataset = load(dataset_file)
 
     # Extraer los datos de entrenamiento y test
