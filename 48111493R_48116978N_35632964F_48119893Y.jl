@@ -317,6 +317,11 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::  Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunction::Function=σ,
     maxEpochs::Int=100, minLoss::Real=0.0, learningRate::Real=0.01, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
+
+
+    trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
+
+    return trainClassCascadeANN(maxNumNeurons,trainingDataset)
     
 end;
     
