@@ -6,6 +6,7 @@ using FileIO
 using JLD2
 using Images
 using FilePathsBase
+using Flux
 
 function fileNamesFolder(folderName::String, extension::String)
     # Verificamos si el nombre de carpeta es válido
@@ -233,61 +234,47 @@ function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
 end;
 
 function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ)
-end;   
+    outputLayer = previousANN[ indexOutputLayer(previousANN) ];
+    previousLayers = previousANN[1:(indexOutputLayer(previousANN)-1)];
+
+    numInputsOutputLayer = size(outputLayer.weight, 2);
+    numOutputsOutputLayer = size(outputLayer.weight, 1); 
+    
+    # Crear la nueva red con una neurona extra en cascada
+    nuevaCapa = SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx, x) -> vcat(x, mx));
+    
+    # Ver si el problema es de 2 o más clases
+    if numOutputsOutputLayer == 1  # Caso de 2 clases
+        ann = Chain(
+            previousLayers...,
+            nuevaCapa,
+            Dense(numOutputsOutputLayer + 1, 1, σ));
+    else  # Caso de más de 2 clases
+        ann = Chain(
+            previousLayers...,
+            nuevaCapa,
+            Dense(numOutputsOutputLayer + 1, numOutputsOutputLayer, identity), softmax);
+    end
+    
+    # Modificar los pesos y bias de la capa de salida
+    # Copiar los pesos de la red anterior, ajustando la nueva columna
+    newWeights = zeros(numOutputsOutputLayer, numInputsOutputLayer + 1);  # Crear matriz de pesos con una columna extra
+    newWeights[:, 1:numInputsOutputLayer] .= outputLayer.weight;  # Copiar los pesos antiguos
+    newWeights[:, end] .= 0;  # Poner la última columna a 0 para la nueva neurona
+
+    # Copiar el bias de la capa anterior
+    newBias = outputLayer.bias;  # El bias permanece igual
+    
+    # Asignar los pesos y bias a la capa de salida
+    ann[end-1].weight .= newWeights;
+    ann[end-1].bias .= newBias;
+    
+    return ann;  # Devolver la nueva red
+end;  
 
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-    # Descomponer el dataset en entradas (X) y salidas (Y)
-    X, Y = trainingDataset
     
-    
-    opt_state = Flux.setup(Adam(learningRate), ann)
-    loss(model,x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y);
-    
-    if trainOnly2LastLayers
-        Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)])  # Congelar capas anteriores
-    end
-    
-    # Almacenar el loss durante el entrenamiento
-    trainingLosses = Float32[]
-    
-    # Evaluar el loss inicial (antes del ciclo 0)
-    initial_loss = loss(ann, X, Y)
-    push!(trainingLosses, initial_loss)
-    
-    # Entrenamiento por epochs
-    for epoch in 1:maxEpochs
-        # Realizar una pasada hacia adelante y hacia atrás
-        Flux.train!(loss(ann, X, Y), params(ann), [(X, Y)], opt_state)
-        
-        # Calcular el loss actual
-        current_loss = loss(ann, X, Y)
-        push!(trainingLosses, current_loss)
-        
-        # Criterios de parada
-        # 1. Parar si el loss es menor o igual al mínimo especificado
-        if current_loss <= minLoss
-            println("Entrenamiento detenido: el loss alcanzó el mínimo deseado.")
-            break
-        end
-        
-        # 2. Parar si el cambio en el loss es inferior al umbral en la ventana especificada
-        if length(trainingLosses) > lossChangeWindowSize
-            # Extraer la ventana de los últimos loss
-            lossWindow = trainingLosses[end-lossChangeWindowSize+1:end]
-            minLossValue, maxLossValue = extrema(lossWindow)
-            
-            # Calcular el ratio de cambio del loss
-            lossChangeRatio = (maxLossValue - minLossValue) / minLossValue
-            
-            if lossChangeRatio <= minLossChange
-                println("Entrenamiento detenido: el cambio en el loss es menor al umbral en la ventana de $lossChangeWindowSize epochs.")
-                break
-            end
-        end
-    end
-    
-    return trainingLosses  # Devolver el vector de pérdidas (loss) durante el entrenamiento
 end;  
 
 
