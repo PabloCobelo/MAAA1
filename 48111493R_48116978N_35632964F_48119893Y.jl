@@ -283,7 +283,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
      
     #Trasponer matrices de entrada
-    training_dataset = (training_dataset[1]',training_dataset[2]')
+    trainingDataset = (trainingDataset[1]',trainingDataset[2]')
 
     #Crear RNA sin capas ocultas + entrenarla
     num_inputs = size(trainingDataset[1],2)
@@ -291,7 +291,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
  
     loss = Float32[]
  
-    loss = trainClassANN!(RNA,training_dataset,true)
+    loss = trainClassANN!(RNA,trainingDataset,false)
  
     #Bucle entrenamiento
  
@@ -300,10 +300,12 @@ function trainClassCascadeANN(maxNumNeurons::Int,
         RNA = addClassCascadeNeuron(RNA)
  
         if numNeurons > 1 
-            loss = [loss;trainClassANN!(RNA,training_dataset,true)[2:end]]
+            loss = [loss;trainClassANN!(RNA,trainingDataset,true)[2:end]]
         else 
-            loss = [loss;trainClassANN!(RNA,training_dataset,false)[2:end]]
+            loss = [loss;trainClassANN!(RNA,trainingDataset,false)[2:end]]
         end;
+
+        loss = [loss;trainClassANN!(RNA,trainingDataset,false)[2:end]]
  
     end;
      
@@ -315,9 +317,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::  Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunction::Function=σ,
     maxEpochs::Int=100, minLoss::Real=0.0, learningRate::Real=0.01, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-    #
-    # Codigo a desarrollar
-    #
+    
 end;
     
 
