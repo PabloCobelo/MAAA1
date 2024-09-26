@@ -462,7 +462,7 @@ end;
 
 
 function randomImages(numImages::Int, resolution::Int)
-    images = randn( numImages * 1 * resolution * resolution)
+    images = randn( numImages, 1, resolution, resolution)
     return images .>= 0
 end;
 
