@@ -115,7 +115,7 @@ showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Rea
 
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
     # Cargar el dataset completo desde el archivo MNIST.jld2
-    dataset_file=joinpath(datasetFolder, "MNIST.jld2");
+    dataset_file = joinpath(datasetFolder, "MNIST.jld2")
     dataset = load(dataset_file)
 
     # Extraer los datos de entrenamiento y test
@@ -123,8 +123,7 @@ function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:
     train_labels = dataset["train_labels"]
     test_imgs = dataset["test_imgs"]
     test_labels = dataset["test_labels"]
-
-
+    
     # Modificar los targets para etiquetas no contempladas en labels
     train_labels[.!in.(train_labels, [setdiff(labels, -1)])] .= -1
     test_labels[.!in.(test_labels, [setdiff(labels, -1)])] .= -1
@@ -136,19 +135,18 @@ function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:
     # Convertir las imágenes a formato NCHW (esto lo implementas en tu propia función)
     train_imgs_nchw = convertImagesNCHW(train_imgs[train_indices])
     test_imgs_nchw = convertImagesNCHW(test_imgs[test_indices])
-    
-#    # Convertir las imágenes NCHW a matrices (aplanando cada imagen de CxHxW a un vector 1D)
-    train_imgs_matrix = [reshape(train_imgs_nchw[i, :, :, :], :) for i in 1:size(train_imgs_nchw, 1)]
-    test_imgs_matrix = [reshape(test_imgs_nchw[i, :, :, :], :) for i in 1:size(test_imgs_nchw, 1)]
-    
-    train_imgs_matrix = reduce(vcat, train_imgs_matrix)
-    test_imgs_matrix = reduce(vcat, test_imgs_matrix)
+
     # Filtrar las etiquetas correspondientes
     train_labels_filtered = train_labels[train_indices]
     test_labels_filtered = test_labels[test_indices]
-    # Devolver la tupla con el formato correcto
-    return (train_imgs_matrix, train_labels_filtered, test_imgs_matrix, test_labels_filtered)
-end;
+
+    # Convertir las imágenes a tipo datasetType (Float32 por defecto)
+    train_imgs_nchw = convert(Array{datasetType, 4}, train_imgs_nchw)
+    test_imgs_nchw = convert(Array{datasetType, 4}, test_imgs_nchw)
+
+    # Devolver la tupla con las imágenes 4D y las etiquetas
+    return (train_imgs_nchw, train_labels_filtered, test_imgs_nchw, test_labels_filtered)
+end
 
 
 
