@@ -455,7 +455,7 @@ end;
 
 
 function randomImages(numImages::Int, resolution::Int)
-    images .= randn( numImages * 1 * resolution * resolution)
+    images = randn( numImages * 1 * resolution * resolution)
     return images .>= 0
 end;
 
@@ -463,7 +463,7 @@ function averageMNISTImages(imageArray::AbstractArray{<:Real,4}, labelArray::Abs
     labels = unique(labelArray) 
     outputImages = (imageArray, length(labels), size(imageArray, 2), size(imageArray, 3), size(imageArray, 4))
     for indexLabel in labels
-        outputImages[i, :, :, :] = dropdims(mean(imageArray[labelArray .== indexLabel, 1, :, :], dims=1), dims=1)
+        outputImages[indexLabel, :, :, :] = dropdims(mean(imageArray[labelArray .== indexLabel, 1, :, :], dims=1), dims=1)
     end
     return outputImages, labels
 
