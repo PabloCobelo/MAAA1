@@ -271,7 +271,7 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
         ann[end-1].bias .= newBias;
     end
 
-    return ann;  # Devolver la nueva red con la neurona añadida
+    return ann  # Devolver la nueva red con la neurona añadida
 end; 
 
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
@@ -441,24 +441,32 @@ function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
     # Seleccionar los índices de las imágenes a modificar
     indices = shuffle(1:length(noiseSet))[1:Int(round(length(noiseSet)*ratioNoise))];
     noiseSet[indices] .= .!noiseSet[indices]
+    return noiseSet
 end;
 
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
-    #
-    # Codigo a desarrollar
-    #
+    cropSet = copy(datasetNCHW)
+    # Obtener las dimensiones del dataset
+    N, C, H, W = size(cropSet)
+    colu_crop = round(Int(W * ratioCrop)) # imagina 8 x 0.25 --> se recortan 2 columnas
+    cropSet[:, :, :, (W - colu_crop + 1):W] .= false #selcciona desde la columna W - colu_crop + 1 hasta W y las pone en false
+    return cropSet
 end;
 
+
 function randomImages(numImages::Int, resolution::Int)
-    #
-    # Codigo a desarrollar
-    #
+    images .= randn( numImages * 1 * resolution * resolution)
+    return images .>= 0
 end;
 
 function averageMNISTImages(imageArray::AbstractArray{<:Real,4}, labelArray::AbstractArray{Int,1})
-    #
-    # Codigo a desarrollar
-    #
+    labels = unique(labelArray) 
+    outputImages = (imageArray, length(labels), size(imageArray, 2), size(imageArray, 3), size(imageArray, 4))
+    for indexLabel in labels
+        outputImages[i, :, :, :] = dropdims(mean(imageArray[labelArray .== indexLabel, 1, :, :], dims=1), dims=1)
+    end
+    return outputImages, labels
+
 end;
 
 function classifyMNISTImages(imageArray::AbstractArray{<:Real,4}, templateInputs::AbstractArray{<:Real,4}, templateLabels::AbstractArray{Int,1})
