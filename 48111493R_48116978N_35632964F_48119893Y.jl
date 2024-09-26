@@ -146,7 +146,7 @@ function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:
 
     # Devolver la tupla con las imágenes 4D y las etiquetas
     return (train_imgs_nchw, train_labels_filtered, test_imgs_nchw, test_labels_filtered)
-end
+end;
 
 
 
