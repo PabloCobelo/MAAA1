@@ -281,34 +281,61 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
     return ann  # Devolver la nueva red con la neurona añadida
 end; 
 
-function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;)
-    trainingDataset = (trainingDataset[1]',trainingDataset[2]');
+function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
+    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
 
-    #Crear RNA sin capas ocultas + entrenarla
-    num_inputs = size(trainingDataset[1],2);
-    RNA = newClassCascadeNetwork(num_inputs,2);
- 
-    loss = Float32[]
- 
-    loss = trainClassANN!(RNA,training_dataset,true);
- 
-    #Bucle entrenamiento
- 
-    for numNeurons in 1:maxNumNeurons
- 
-        RNA = addClassCascadeNeuron(RNA)
- 
-        if numNeurons > 1 
-            loss = [loss;trainClassANN!(RNA,training_dataset,true)[2:end]]
-        else 
-            loss = [loss;trainClassANN!(RNA,training_dataset,false)[2:end]]
-        end;
-        
-        
-    end;
-     
-    return RNA, loss
-end;  
+    # Preparar el dataset
+    X, y = trainingDataset
+    X = Float32.(X)
+    y = Float32.(y)
+
+    # Definir la función de pérdida y el optimizador
+    loss(x, y) = Flux.logitcrossentropy(ann(x), y)
+    opt = ADAM(learningRate)
+
+    # Crear el vector para almacenar el historial de pérdida
+    loss_history = Float32[]
+
+    # Función para registrar la pérdida
+    function log_loss()
+        push!(loss_history, loss(X, y))
+    end
+
+    # Inicializar el historial de pérdida
+    log_loss()
+
+    # Bucle de entrenamiento
+    for epoch in 1:maxEpochs
+        # Si es necesario, congelar todas las capas menos las dos últimas
+        if trainOnly2LastLayers
+            # Freezing the first layers by setting their gradients to zero
+            for p in Flux.params(ann[1:(end-2)])
+                p.grad .= 0
+            end
+        end
+
+        # Entrenar una época completa
+        Flux.train!(loss, Flux.params(ann), [(X, y)], opt)
+
+        # Registrar la pérdida
+        log_loss()
+
+        # Chequeo de criterios de parada temprana
+        if length(loss_history) > lossChangeWindowSize
+            if abs(loss_history[end] - loss_history[end - lossChangeWindowSize]) < minLossChange
+                println("Deteniendo entrenamiento: cambio mínimo en loss")
+                break
+            end
+        end
+
+        if loss_history[end] < minLoss
+            println("Deteniendo entrenamiento: loss mínima alcanzada")
+            break
+        end
+    end
+
+    return loss_history
+end  
 
 
 function trainClassCascadeANN(maxNumNeurons::Int,
