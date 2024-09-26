@@ -282,58 +282,32 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
 end; 
 
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
-    maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-    # Descomponer el dataset en entradas (X) y salidas (Y)
-    X, Y = trainingDataset
-    
-    
-    opt_state = Flux.setup(Adam(learningRate), ann)
-    loss(model,x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y);
-    
-    if trainOnly2LastLayers
-        Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)])  # Congelar capas anteriores
-    end
-    
-    # Almacenar el loss durante el entrenamiento
-    trainingLosses = Float32[]
-    
-    # Evaluar el loss inicial (antes del ciclo 0)
-    initial_loss = loss(ann, X, Y)
-    push!(trainingLosses, initial_loss)
-    
-    # Entrenamiento por epochs
-    for epoch in 1:maxEpochs
-        # Realizar una pasada hacia adelante y hacia atrás
-        Flux.train!(loss(ann, X, Y), params(ann), [(X, Y)], opt_state)
+    trainingDataset = (trainingDataset[1]',trainingDataset[2]');
+
+    #Crear RNA sin capas ocultas + entrenarla
+    num_inputs = size(trainingDataset[1],2);
+    RNA = newClassCascadeNetwork(num_inputs,2);
+ 
+    loss = Float32[]
+ 
+    loss = trainClassANN!(RNA,training_dataset,true);
+ 
+    #Bucle entrenamiento
+ 
+    for numNeurons in 1:maxNumNeurons
+ 
+        RNA = addClassCascadeNeuron(RNA)
+ 
+        if numNeurons > 1 
+            loss = [loss;trainClassANN!(RNA,training_dataset,true)[2:end]]
+        else 
+            loss = [loss;trainClassANN!(RNA,training_dataset,false)[2:end]]
+        end;
         
-        # Calcular el loss actual
-        current_loss = loss(ann, X, Y)
-        push!(trainingLosses, current_loss)
         
-        # Criterios de parada
-        # 1. Parar si el loss es menor o igual al mínimo especificado
-        if current_loss <= minLoss
-            println("Entrenamiento detenido: el loss alcanzó el mínimo deseado.")
-            break
-        end
-        
-        # 2. Parar si el cambio en el loss es inferior al umbral en la ventana especificada
-        if length(trainingLosses) > lossChangeWindowSize
-            # Extraer la ventana de los últimos loss
-            lossWindow = trainingLosses[end-lossChangeWindowSize+1:end]
-            minLossValue, maxLossValue = extrema(lossWindow)
-            
-            # Calcular el ratio de cambio del loss
-            lossChangeRatio = (maxLossValue - minLossValue) / minLossValue
-            
-            if lossChangeRatio <= minLossChange
-                println("Entrenamiento detenido: el cambio en el loss es menor al umbral en la ventana de $lossChangeWindowSize epochs.")
-                break
-            end
-        end
-    end
-    
-    return trainingLosses  # Devolver el vector de pérdidas (loss) durante el entrenamiento
+    end;
+     
+    return RNA, loss
 end;  
 
 
@@ -375,9 +349,10 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::  Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunction::Function=σ,
     maxEpochs::Int=100, minLoss::Real=0.0, learningRate::Real=0.01, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-    #
-    # Codigo a desarrollar
-    #
+    
+    trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
+
+    return trainClassCascadeANN(maxNumNeurons, trainingDataset)
 end;
     
 
