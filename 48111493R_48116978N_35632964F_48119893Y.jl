@@ -237,7 +237,7 @@ function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
         # Para una sola salida
         return Chain(Dense(numInputs, numOutputs, identity))
     end
-end
+end;
 
 
 
