@@ -122,10 +122,7 @@ function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:
     train_labels = dataset["train_labels"]
     test_imgs = dataset["test_imgs"]
     test_labels = dataset["test_labels"]
-    
-    # Convertir las imágenes al tipo especificado (por defecto Float32)
-    train_imgs = convert(Array{datasetType}, train_imgs)
-    test_imgs = convert(Array{datasetType}, test_imgs)
+
 
     # Modificar los targets para etiquetas no contempladas en labels
     train_labels[.!in.(train_labels, [setdiff(labels, -1)])] .= -1
