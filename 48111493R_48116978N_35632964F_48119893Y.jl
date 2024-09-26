@@ -229,8 +229,17 @@ indexOutputLayer(ann::Chain) = length(ann) - (ann[end]==softmax);
 
 
 function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
-    return numOutputs == 2 ? Chain(Dense(numInputs, numOutputs, σ)) : Chain(Dense(numInputs, numOutputs, identity), softmax) 
-end;
+    if numOutputs == 2
+        # Para clasificación binaria (dos clases)
+        return Chain(Dense(numInputs, 1, σ))
+    elseif numOutputs > 2
+        # Para clasificación multiclase (más de dos clases)
+        return Chain(Dense(numInputs, numOutputs, identity), softmax)
+    else
+        # Para una sola salida
+        return Chain(Dense(numInputs, numOutputs, identity))
+    end
+end
 
 
 
