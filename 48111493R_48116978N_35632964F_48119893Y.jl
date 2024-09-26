@@ -112,6 +112,7 @@ showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Rea
 
 
 
+
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
     # Cargar el dataset completo desde el archivo MNIST.jld2
     dataset_file=joinpath(datasetFolder, "MNIST.jld2");
@@ -147,7 +148,7 @@ function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:
     test_labels_filtered = test_labels[test_indices]
     # Devolver la tupla con el formato correcto
     return (train_imgs_matrix, train_labels_filtered, test_imgs_matrix, test_labels_filtered)
-end
+end;
 
 
 
@@ -161,7 +162,7 @@ function intervalDiscreteVector(data::AbstractArray{<:Real,1})
     # Si todas las diferencias son multiplos exactos (valores enteros) de esa diferencia, entonces es un vector de valores discretos
     isInteger(x::Float64, tol::Float64) = abs(round(x)-x) < tol
     return all(isInteger.(differences./minDifference, 1e-3)) ? minDifference : 0.
-end
+end;
 
 
 function cyclicalEncoding(data::AbstractArray{<:Real,1})
@@ -214,7 +215,7 @@ function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=
     
     # Devolver la matriz de entradas y el vector de salidas deseadas
     return (inputs_converted, targets)
-end
+end;
 
 
 
@@ -225,55 +226,107 @@ end
 
 indexOutputLayer(ann::Chain) = length(ann) - (ann[end]==softmax);
 
-function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
-    
 
-    
-    return ann  
+
+function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
+    return numOutputs == 2 ? Chain(Dense(numInputs, numOutputs, σ)) : Chain(Dense(numInputs, numOutputs, identity), softmax) 
 end;
 
+
+
+
 function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ)
-    outputLayer = previousANN[ indexOutputLayer(previousANN) ];
+    # Obtener la capa de salida y las capas previas
+    outputLayer = previousANN[indexOutputLayer(previousANN)];
     previousLayers = previousANN[1:(indexOutputLayer(previousANN)-1)];
 
+    # Número de entradas y salidas de la capa de salida actual
     numInputsOutputLayer = size(outputLayer.weight, 2);
     numOutputsOutputLayer = size(outputLayer.weight, 1); 
-    
-    # Crear la nueva red con una neurona extra en cascada
-    nuevaCapa = SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx, x) -> vcat(x, mx));
-    
-    # Ver si el problema es de 2 o más clases
-    if numOutputsOutputLayer == 1  # Caso de 2 clases
-        ann = Chain(
-            previousLayers...,
-            nuevaCapa,
-            Dense(numOutputsOutputLayer + 1, 1, σ));
-    else  # Caso de más de 2 clases
-        ann = Chain(
-            previousLayers...,
-            nuevaCapa,
-            Dense(numOutputsOutputLayer + 1, numOutputsOutputLayer, identity), softmax);
-    end
-    
-    # Modificar los pesos y bias de la capa de salida
-    # Copiar los pesos de la red anterior, ajustando la nueva columna
-    newWeights = zeros(numOutputsOutputLayer, numInputsOutputLayer + 1);  # Crear matriz de pesos con una columna extra
-    newWeights[:, 1:numInputsOutputLayer] .= outputLayer.weight;  # Copiar los pesos antiguos
-    newWeights[:, end] .= 0;  # Poner la última columna a 0 para la nueva neurona
 
-    # Copiar el bias de la capa anterior
-    newBias = outputLayer.bias;  # El bias permanece igual
-    
-    # Asignar los pesos y bias a la capa de salida
-    ann[end-1].weight .= newWeights;
-    ann[end-1].bias .= newBias;
-    
-    return ann;  # Devolver la nueva red
-end;  
+    # Crear la nueva red con una neurona extra en cascada
+    ann = Chain(
+        previousLayers...,  # Expandir capas previas
+        SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx, x) -> vcat(x, mx)),
+        # Capas de salida según el tipo de problema de clasificación
+        numOutputsOutputLayer == 1 ? Dense(numInputsOutputLayer + 1, 1, σ) : Chain(Dense(numInputsOutputLayer + 1, numOutputsOutputLayer, identity), softmax)
+    );
+
+    # Modificar los pesos y bias de la nueva capa de salida
+    # Crear matriz de pesos con una columna adicional
+    newWeights = zeros(numOutputsOutputLayer, numInputsOutputLayer + 1);  
+    # Copiar pesos antiguos a la nueva matriz, excepto la última columna
+    newWeights[:, 1:numInputsOutputLayer] .= outputLayer.weight;
+    # La última columna se pone a 0 para no afectar la salida
+    newWeights[:, end] .= 0;  
+
+    # El vector de bias permanece igual
+    newBias = outputLayer.bias;
+
+    if numOutputsOutputLayer == 1
+        ann[end].weight .= newWeights;
+        ann[end].bias .= newBias;
+    else
+        ann[end-1].weight .= newWeights;
+        ann[end-1].bias .= newBias;
+    end
+
+    return ann;  # Devolver la nueva red con la neurona añadida
+end; 
 
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
+    # Descomponer el dataset en entradas (X) y salidas (Y)
+    X, Y = trainingDataset
     
+    
+    opt_state = Flux.setup(Adam(learningRate), ann)
+    loss(model,x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y);
+    
+    if trainOnly2LastLayers
+        Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)])  # Congelar capas anteriores
+    end
+    
+    # Almacenar el loss durante el entrenamiento
+    trainingLosses = Float32[]
+    
+    # Evaluar el loss inicial (antes del ciclo 0)
+    initial_loss = loss(ann, X, Y)
+    push!(trainingLosses, initial_loss)
+    
+    # Entrenamiento por epochs
+    for epoch in 1:maxEpochs
+        # Realizar una pasada hacia adelante y hacia atrás
+        Flux.train!(loss(ann, X, Y), params(ann), [(X, Y)], opt_state)
+        
+        # Calcular el loss actual
+        current_loss = loss(ann, X, Y)
+        push!(trainingLosses, current_loss)
+        
+        # Criterios de parada
+        # 1. Parar si el loss es menor o igual al mínimo especificado
+        if current_loss <= minLoss
+            println("Entrenamiento detenido: el loss alcanzó el mínimo deseado.")
+            break
+        end
+        
+        # 2. Parar si el cambio en el loss es inferior al umbral en la ventana especificada
+        if length(trainingLosses) > lossChangeWindowSize
+            # Extraer la ventana de los últimos loss
+            lossWindow = trainingLosses[end-lossChangeWindowSize+1:end]
+            minLossValue, maxLossValue = extrema(lossWindow)
+            
+            # Calcular el ratio de cambio del loss
+            lossChangeRatio = (maxLossValue - minLossValue) / minLossValue
+            
+            if lossChangeRatio <= minLossChange
+                println("Entrenamiento detenido: el cambio en el loss es menor al umbral en la ventana de $lossChangeWindowSize epochs.")
+                break
+            end
+        end
+    end
+    
+    return trainingLosses  # Devolver el vector de pérdidas (loss) durante el entrenamiento
 end;  
 
 
@@ -283,7 +336,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
      
     #Trasponer matrices de entrada
-    trainingDataset = (trainingDataset[1]',trainingDataset[2]')
+    training_dataset = (training_dataset[1]',training_dataset[2]')
 
     #Crear RNA sin capas ocultas + entrenarla
     num_inputs = size(trainingDataset[1],2)
@@ -291,7 +344,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
  
     loss = Float32[]
  
-    loss = trainClassANN!(RNA,trainingDataset,false)
+    loss = trainClassANN!(RNA,training_dataset,true)
  
     #Bucle entrenamiento
  
@@ -300,12 +353,10 @@ function trainClassCascadeANN(maxNumNeurons::Int,
         RNA = addClassCascadeNeuron(RNA)
  
         if numNeurons > 1 
-            loss = [loss;trainClassANN!(RNA,trainingDataset,true)[2:end]]
+            loss = [loss;trainClassANN!(RNA,training_dataset,true)[2:end]]
         else 
-            loss = [loss;trainClassANN!(RNA,trainingDataset,false)[2:end]]
+            loss = [loss;trainClassANN!(RNA,training_dataset,false)[2:end]]
         end;
-
-        loss = [loss;trainClassANN!(RNA,trainingDataset,false)[2:end]]
  
     end;
      
@@ -317,12 +368,9 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::  Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunction::Function=σ,
     maxEpochs::Int=100, minLoss::Real=0.0, learningRate::Real=0.01, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-
-
-    trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
-
-    return trainClassCascadeANN(maxNumNeurons,trainingDataset)
-    
+    #
+    # Codigo a desarrollar
+    #
 end;
     
 
@@ -393,32 +441,24 @@ function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
     # Seleccionar los índices de las imágenes a modificar
     indices = shuffle(1:length(noiseSet))[1:Int(round(length(noiseSet)*ratioNoise))];
     noiseSet[indices] .= .!noiseSet[indices]
-    return noiseSet
 end;
 
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
-    cropSet = copy(datasetNCHW)
-    # Obtener las dimensiones del dataset
-    N, C, H, W = size(cropSet)
-    colu_crop = round(Int(W * ratioCrop)) # imagina 8 x 0.25 --> se recortan 2 columnas
-    cropSet[:, :, :, (W - colu_crop + 1):W] .= false #selcciona desde la columna W - colu_crop + 1 hasta W y las pone en false
-    return cropSet
+    #
+    # Codigo a desarrollar
+    #
 end;
 
-
 function randomImages(numImages::Int, resolution::Int)
-    images = randn( numImages * 1 * resolution * resolution)
-    return images .>= 0
+    #
+    # Codigo a desarrollar
+    #
 end;
 
 function averageMNISTImages(imageArray::AbstractArray{<:Real,4}, labelArray::AbstractArray{Int,1})
-    labels = unique(labelArray) 
-    outputImages = (imageArray, length(labels), size(imageArray, 2), size(imageArray, 3), size(imageArray, 4))
-    for indexLabel in labels
-        outputImages[indexLabel, :, :, :] = dropdims(mean(imageArray[labelArray .== indexLabel, 1, :, :], dims=1), dims=1)
-    end
-    return outputImages, labels
-
+    #
+    # Codigo a desarrollar
+    #
 end;
 
 function classifyMNISTImages(imageArray::AbstractArray{<:Real,4}, templateInputs::AbstractArray{<:Real,4}, templateLabels::AbstractArray{Int,1})
