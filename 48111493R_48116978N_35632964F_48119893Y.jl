@@ -281,7 +281,7 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
     return ann  # Devolver la nueva red con la neurona añadida
 end; 
 
-function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
+function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;)
     trainingDataset = (trainingDataset[1]',trainingDataset[2]');
 
     #Crear RNA sin capas ocultas + entrenarla
@@ -337,7 +337,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
             loss = [loss;trainClassANN!(RNA,training_dataset,true)[2:end]]
             
         end;
-
+ 
         #Volvemos a entrenar sin congelar
         loss = [loss;trainClassANN!(RNA,training_dataset,true)[2:end]]
  
