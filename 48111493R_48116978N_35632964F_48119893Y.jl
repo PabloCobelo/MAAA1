@@ -352,7 +352,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
  
     loss = Float32[]
  
-    loss = trainClassANN!(RNA,training_dataset,true)
+    loss = trainClassANN!(RNA,trainingDataset,true)
  
     #Bucle entrenamiento
     #Si fallan valores cambiar 1 por 2
@@ -361,12 +361,12 @@ function trainClassCascadeANN(maxNumNeurons::Int,
         RNA = addClassCascadeNeuron(RNA)
         #Si el numero de neuronas es mayor que  1, congelamos las dos ultimas
         if numNeurons > 1 
-            loss = [loss;trainClassANN!(RNA,training_dataset,true)[2:end]]
+            loss = [loss;trainClassANN!(RNA,trainingDataset,true)[2:end]]
             
         end;
  
         #Volvemos a entrenar sin congelar
-        loss = [loss;trainClassANN!(RNA,training_dataset,true)[2:end]]
+        loss = [loss;trainClassANN!(RNA,trainingDataset,true)[2:end]]
  
     end;
      
