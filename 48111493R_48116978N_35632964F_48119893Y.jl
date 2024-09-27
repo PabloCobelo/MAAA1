@@ -483,9 +483,15 @@ function averageMNISTImages(imageArray::AbstractArray{<:Real,4}, labelArray::Abs
 end;
 
 function classifyMNISTImages(imageArray::AbstractArray{<:Real,4}, templateInputs::AbstractArray{<:Real,4}, templateLabels::AbstractArray{Int,1})
-    #
-    # Codigo a desarrollar
-    #
+    outputs = fill(-1, size(imageArray,1)) #inicializa en -1 un vector de tamaño igual al número de imágenes en imageArray (por eso el 1)
+    
+    for (indexLabel, label) in enumerate(templateLabels) #itera en las etiquetas donde tenemos el ínidce y la etiqueta en sí
+        template = templateInputs[[indexLabel], :, :, :]
+        indicesCoincidence = vec(all(imageArray .== template, dims=[3,4]))
+        outputs[indicesCoincidence] .= label
+    end
+    
+    return outputs
 end;
 
 function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{Int,1}, threshold::Real)
