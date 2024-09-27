@@ -471,13 +471,15 @@ function randomImages(numImages::Int, resolution::Int)
 end;
 
 function averageMNISTImages(imageArray::AbstractArray{<:Real,4}, labelArray::AbstractArray{Int,1})
-    labels = unique(labelArray) 
-    outputImages = (imageArray, length(labels), size(imageArray, 2), size(imageArray, 3), size(imageArray, 4))
-    for indexLabel in labels
-        outputImages[indexLabel, :, :, :] = dropdims(mean(imageArray[labelArray .== indexLabel, 1, :, :], dims=1), dims=1)
+    labels = unique(labelArray)
+    outputs = length(labels), size(imageArray, 2), size(imageArray, 3), size(imageArray, 4)
+    outputImages = similar(imageArray, eltype(imageArray), outputs)
+    
+    for (indexLabel, label) in enumerate(labels)
+        outputImages[indexLabel, :, :, :] = dropdims(mean(imageArray[labelArray .== label, 1, :, :], dims=1), dims=1)
     end
+    
     return outputImages, labels
-
 end;
 
 function classifyMNISTImages(imageArray::AbstractArray{<:Real,4}, templateInputs::AbstractArray{<:Real,4}, templateLabels::AbstractArray{Int,1})
