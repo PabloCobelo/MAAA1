@@ -296,38 +296,32 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
-    # Función para registrar la pérdida
-    function log_loss()
-        push!(loss_history, loss(X, y))
-    end
-
-    # Inicializar el historial de pérdida
-    log_loss()
+    #Añadir el loss INICIAL a la lista, usando concatenacion
+    loss_history = [loss_history;loss_inicial]
 
     # Bucle de entrenamiento
-    for epoch in 1:maxEpochs
+    for numEpoch in 1:maxEpochs
+
         # Si es necesario, congelar todas las capas menos las dos últimas
         if trainOnly2LastLayers
-            # Freezing the first layers by setting their gradients to zero
-            for p in Flux.params(ann[1:(end-2)])
-                p.grad .= 0
-            end
+            Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)]);
         end
 
         # Entrenar una época completa
         Flux.train!(loss, Flux.params(ann), [(X, y)], opt)
-
-        # Registrar la pérdida
-        log_loss()
+        
+        #Añadir el loss a la lista, usando concatenacion
+        loss_history = [loss_history;loss(x,y)] 
 
         # Chequeo de criterios de parada temprana
-        if length(loss_history) > lossChangeWindowSize
-            if abs(loss_history[end] - loss_history[end - lossChangeWindowSize]) < minLossChange
-                println("Deteniendo entrenamiento: cambio mínimo en loss")
-                break
-            end
-        end
-
+        if numEpoch > lossChangeWindowSize
+            lossWindow = trainingLosses[end-lossChangeWindowSize+1:end];
+            minLossValue, maxLossValue = extrema(lossWindow);
+            if ((maxLossValue-minLossValue)/minLossValue <= minLossChange)
+                break;
+        end;
+        
+        #Terminar el entrenamiento si el loss supera el minimo
         if loss_history[end] < minLoss
             println("Deteniendo entrenamiento: loss mínima alcanzada")
             break
@@ -336,6 +330,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
 
     return loss_history
 end  
+end
 
 
 function trainClassCascadeANN(maxNumNeurons::Int,
