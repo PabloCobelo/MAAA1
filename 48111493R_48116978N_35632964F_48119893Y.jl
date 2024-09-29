@@ -297,7 +297,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     loss_history = Float32[]
 
     #Añadir el loss INICIAL a la lista, usando concatenacion
-    loss_history = [loss_history;loss_inicial]
+    loss_history = [loss_history;loss(x,y)]
 
     # Bucle de entrenamiento
     for numEpoch in 1:maxEpochs
@@ -319,7 +319,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
             minLossValue, maxLossValue = extrema(lossWindow);
             if ((maxLossValue-minLossValue)/minLossValue <= minLossChange)
                 break;
-        end;
+        end
         
         #Terminar el entrenamiento si el loss supera el minimo
         if loss_history[end] < minLoss
