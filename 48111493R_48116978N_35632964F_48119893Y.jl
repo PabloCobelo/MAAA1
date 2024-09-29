@@ -329,8 +329,8 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     end
 
     return loss_history
-end  
-end
+end;
+
 
 
 function trainClassCascadeANN(maxNumNeurons::Int,
@@ -353,7 +353,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     #Si fallan valores cambiar 1 por 2
     for numNeurons in 1:maxNumNeurons
  
-        RNA = addClassCascadeNeuron(RNA)
+        RNA = addClassCascadeNeuron(RNA,transferFunction)
         #Si el numero de neuronas es mayor que  1, congelamos las dos ultimas
         if numNeurons > 1 
             loss = [loss;trainClassANN!(RNA,trainingDataset,true,maxEpochs,minLoss,learningRate, minLossChange, lossChangeWindowSize )[2:end]]
