@@ -297,7 +297,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     loss_history = Float32[]
 
     #Añadir el loss INICIAL a la lista, usando concatenacion
-    loss_history = [loss_history;loss_inicial]
+    loss_history = [loss_history;loss(x,y)]
 
     # Bucle de entrenamiento
     for numEpoch in 1:maxEpochs
