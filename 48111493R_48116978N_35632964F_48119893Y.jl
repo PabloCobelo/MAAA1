@@ -319,6 +319,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
             minLossValue, maxLossValue = extrema(lossWindow);
             if ((maxLossValue-minLossValue)/minLossValue <= minLossChange)
                 break;
+            end
         end;
         
         #Terminar el entrenamiento si el loss supera el minimo
