@@ -297,7 +297,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     loss_history = Float32[]
 
     #Añadir el loss INICIAL a la lista, usando concatenacion
-    loss_history = [loss_history;loss(x,y)]
+    loss_history = [loss_history;loss_inicial]
 
     # Bucle de entrenamiento
     for numEpoch in 1:maxEpochs
@@ -319,7 +319,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
             minLossValue, maxLossValue = extrema(lossWindow);
             if ((maxLossValue-minLossValue)/minLossValue <= minLossChange)
                 break;
-        end
+        end;
         
         #Terminar el entrenamiento si el loss supera el minimo
         if loss_history[end] < minLoss
@@ -329,8 +329,8 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     end
 
     return loss_history
-end;
-
+end  
+end
 
 
 function trainClassCascadeANN(maxNumNeurons::Int,
@@ -353,7 +353,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     #Si fallan valores cambiar 1 por 2
     for numNeurons in 1:maxNumNeurons
  
-        RNA = addClassCascadeNeuron(RNA,transferFunction)
+        RNA = addClassCascadeNeuron(RNA)
         #Si el numero de neuronas es mayor que  1, congelamos las dos ultimas
         if numNeurons > 1 
             loss = [loss;trainClassANN!(RNA,trainingDataset,true,maxEpochs,minLoss,learningRate, minLossChange, lossChangeWindowSize )[2:end]]
@@ -490,10 +490,44 @@ function classifyMNISTImages(imageArray::AbstractArray{<:Real,4}, templateInputs
 end;
 
 function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{Int,1}, threshold::Real)
-    #
-    # Codigo a desarrollar
-    #
+    # Paso 1: Cargar el dataset MNIST
+    train_imgs, train_labels, test_imgs, test_labels = loadMNISTDataset(datasetFolder, labels=labels, datasetType=Float32)
+    
+    # Paso 2: Promediar las imágenes de entrenamiento con averageMNISTImages
+    template_imgs, template_labels = averageMNISTImages(train_imgs, train_labels)
+
+    # Paso 3: Umbralizar las imágenes con el valor del umbral
+    train_imgs_binary = train_imgs .>= threshold
+    test_imgs_binary = test_imgs .>= threshold
+    template_imgs_binary = template_imgs .>= threshold
+
+    # Paso 4: Entrenar la red de Hopfield con las plantillas umbralizadas
+    hopfield_net = Hopfield(template_imgs_binary)  # Asumo que tienes definida una red de Hopfield
+
+    # Paso 5: Calcular la precisión en el conjunto de entrenamiento
+    # Ejecutar la red de Hopfield con las imágenes de entrenamiento
+    train_reconstructed = hopfield_net(train_imgs_binary)
+
+    # Clasificar las imágenes reconstruidas
+    train_predicted_labels = classifyMNISTImages(train_reconstructed, template_imgs_binary, template_labels)
+
+    # Calcular la precisión en el conjunto de entrenamiento
+    train_accuracy = mean(train_predicted_labels .== train_labels)
+
+    # Paso 6: Calcular la precisión en el conjunto de test
+    # Ejecutar la red de Hopfield con las imágenes de test
+    test_reconstructed = hopfield_net(test_imgs_binary)
+
+    # Clasificar las imágenes reconstruidas del test
+    test_predicted_labels = classifyMNISTImages(test_reconstructed, template_imgs_binary, template_labels)
+
+    # Calcular la precisión en el conjunto de test
+    test_accuracy = mean(test_predicted_labels .== test_labels)
+
+    # Devolver la tupla con las precisiones en el conjunto de entrenamiento y test
+    return (train_accuracy, test_accuracy)
 end;
+
 
 
 
