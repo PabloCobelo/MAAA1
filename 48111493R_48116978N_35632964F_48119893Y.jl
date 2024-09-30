@@ -329,8 +329,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     end
 
     return loss_history
-end  
-end
+end;
 
 
 function trainClassCascadeANN(maxNumNeurons::Int,
