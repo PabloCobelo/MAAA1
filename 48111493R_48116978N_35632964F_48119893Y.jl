@@ -543,28 +543,24 @@ Batch = Tuple{AbstractArray{<:Real,2}, AbstractArray{<:Any,1}}
 
 
 function batchInputs(batch::Batch)
-    #
-    # Codigo a desarrollar
-    #
+    return batch[1]
 end;
 
 function batchTargets(batch::Batch)
-    #
-    # Codigo a desarrollar
-    #
+    return [2]
 end;
 
 function batchLength(batch::Batch)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    return size(batchInputs(batch), 2)  # Número de columnas (dimensión 2) representa el número de instancias
+end
+
 
 function selectInstances(batch::Batch, indices::Any)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    inputs = batchInputs(batch)[:, indices]  # Seleccionar las columnas (instancias) indicadas de las entradas
+    targets = batchTargets(batch)[:, indices]  # Seleccionar las columnas (instancias) indicadas de las salidas
+    return (inputs, targets)
+end
+
 
 function joinBatches(batch1::Batch, batch2::Batch)
     #
