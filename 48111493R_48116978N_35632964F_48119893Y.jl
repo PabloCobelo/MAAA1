@@ -502,7 +502,7 @@ function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{I
     template_imgs_binary = template_imgs .>= threshold
 
     # Paso 4: Entrenar la red de Hopfield con las plantillas umbralizadas
-    hopfield_net = Hopfield(template_imgs_binary)  # Asumo que tienes definida una red de Hopfield
+    hopfield_net = HopfieldNet(template_imgs_binary)  
 
     # Paso 5: Calcular la precisión en el conjunto de entrenamiento
     # Ejecutar la red de Hopfield con las imágenes de entrenamiento
