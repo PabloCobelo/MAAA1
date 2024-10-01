@@ -290,14 +290,14 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     y = Float32.(y)
 
     # Definir la función de pérdida y el optimizador
-    loss(x, y) = Flux.logitcrossentropy(ann(x), y)
+    loss(X, y) = Flux.logitcrossentropy(ann(X), y)
     opt = ADAM(learningRate)
 
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
     #Añadir el loss INICIAL a la lista, usando concatenacion
-    loss_history = [loss_history;loss(x,y)]
+    loss_history = [loss_history;loss(X,y)]
 
     # Bucle de entrenamiento
     for numEpoch in 1:maxEpochs
@@ -311,7 +311,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
         Flux.train!(loss, Flux.params(ann), [(X, y)], opt)
         
         #Añadir el loss a la lista, usando concatenacion
-        loss_history = [loss_history;loss(x,y)] 
+        loss_history = [loss_history;loss(X,y)] 
 
         # Chequeo de criterios de parada temprana
         if numEpoch > lossChangeWindowSize
