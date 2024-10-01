@@ -347,21 +347,21 @@ function trainClassCascadeANN(maxNumNeurons::Int,
  
     loss = Float32[]
  
-    loss = trainClassANN!(RNA,trainingDataset,true,maxEpochs,minLoss,learningRate, minLossChange, lossChangeWindowSize)
+    loss = trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs;minLoss=minLoss;learningRate=learningRate; minLossChange=minLossChange; lossChangeWindowSize=lossChangeWindowSize)
  
     #Bucle entrenamiento
     #Si fallan valores cambiar 1 por 2
     for numNeurons in 1:maxNumNeurons
  
-        RNA = addClassCascadeNeuron(RNA)
+        RNA = addClassCascadeNeuron(RNA;transferFunction = transferFunction)
         #Si el numero de neuronas es mayor que  1, congelamos las dos ultimas
         if numNeurons > 1 
-            loss = [loss;trainClassANN!(RNA,trainingDataset,true,maxEpochs,minLoss,learningRate, minLossChange, lossChangeWindowSize )[2:end]]
+            loss = [loss;trainClassANN!(RNA,trainingDataset,true;maxEpochs=maxEpochs;minLoss=minLoss;learningRate=learningRate; minLossChange=minLossChange; lossChangeWindowSize=lossChangeWindowSize)[2:end]]
             
         end;
  
         #Volvemos a entrenar sin congelar
-        loss = [loss;trainClassANN!(RNA,trainingDataset,true,maxEpochs,minLoss,learningRate, minLossChange, lossChangeWindowSize)[2:end]]
+        loss = [loss;trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs;minLoss=minLoss;learningRate=learningRate; minLossChange=minLossChange; lossChangeWindowSize=lossChangeWindowSize)[2:end]]
  
     end;
      
