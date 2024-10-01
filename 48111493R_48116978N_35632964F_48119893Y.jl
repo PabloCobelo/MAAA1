@@ -563,10 +563,16 @@ end
 
 
 function joinBatches(batch1::Batch, batch2::Batch)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    # Concatenar las entradas (matrices) de los dos lotes
+    inputs = vcat(batchInputs(batch1), batchInputs(batch2))
+    
+    # Concatenar las salidas deseadas (vectores) de los dos lotes
+    targets = vcat(batchTargets(batch1), batchTargets(batch2))
+    
+    # Devolver un nuevo lote de datos con la concatenación
+    return (inputs, targets)
+end
+
 
 
 function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=false)
