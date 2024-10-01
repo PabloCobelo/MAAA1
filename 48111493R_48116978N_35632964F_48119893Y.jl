@@ -376,7 +376,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     
     trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
 
-    return trainClassCascadeANN(maxNumNeurons, trainingDataset, transferFunction, maxEpochs, minLoss, learningRate, minLossChange, lossChangeWindowSize)
+    return trainClassCascadeANN(maxNumNeurons, trainingDataset; transferFunction = transferFunction;maxEpochs=maxEpochs;minLoss=minLoss;learningRate=learningRate; minLossChange=minLossChange; lossChangeWindowSize=lossChangeWindowSize)
 end;
     
 
