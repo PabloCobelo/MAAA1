@@ -494,38 +494,37 @@ function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{I
     train_imgs, train_labels, test_imgs, test_labels = loadMNISTDataset(datasetFolder, labels=labels, datasetType=Float32)
     
     # Paso 2: Promediar las imágenes de entrenamiento con averageMNISTImages
-    template_imgs, template_labels = averageMNISTImages(train_imgs, train_labels)
+    plantilla_imgs, plantilla_labels = averageMNISTImages(train_imgs, train_labels)
 
     # Paso 3: Umbralizar las imágenes con el valor del umbral
     train_imgs_binary = train_imgs .>= threshold
     test_imgs_binary = test_imgs .>= threshold
-    template_imgs_binary = template_imgs .>= threshold
+    plantilla_imgs_binary = plantilla_imgs .>= threshold
 
     # Paso 4: Entrenar la red de Hopfield con las plantillas umbralizadas
-    hopfield_net = HopfieldNet(template_imgs_binary)  
+    hopfield_net1 = trainHopfield(plantilla_imgs_binary)  # Asumo que tienes definida una red de Hopfield
 
     # Paso 5: Calcular la precisión en el conjunto de entrenamiento
     # Ejecutar la red de Hopfield con las imágenes de entrenamiento
-    train_reconstructed = hopfield_net(train_imgs_binary)
+    hopfield_net2 = trainHopfield(train_imgs_binary)
 
     # Clasificar las imágenes reconstruidas
-    train_predicted_labels = classifyMNISTImages(train_reconstructed, template_imgs_binary, template_labels)
+    train_predicted_labels = classifyMNISTImages(hopfield_net2, hopfield_net1, plantilla_labels)
 
     # Calcular la precisión en el conjunto de entrenamiento
-    train_accuracy = mean(train_predicted_labels .== train_labels)
-
+    train_precision = sum(train_predicted_labels .== train_labels) / length(train_labels)
     # Paso 6: Calcular la precisión en el conjunto de test
     # Ejecutar la red de Hopfield con las imágenes de test
-    test_reconstructed = hopfield_net(test_imgs_binary)
+    test_reconstructed = trainHopfield(test_imgs_binary)
 
     # Clasificar las imágenes reconstruidas del test
-    test_predicted_labels = classifyMNISTImages(test_reconstructed, template_imgs_binary, template_labels)
+    test_predicted_labels = classifyMNISTImages(test_reconstructed, hopfield_net1, plantilla_labels)
 
     # Calcular la precisión en el conjunto de test
-    test_accuracy = mean(test_predicted_labels .== test_labels)
+    test_accuracy = sum(test_predicted_labels .== test_labels) / length(test_labels)
 
     # Devolver la tupla con las precisiones en el conjunto de entrenamiento y test
-    return (train_accuracy, test_accuracy)
+    return (train_precision, test_accuracy)
 end;
 
 
