@@ -293,6 +293,8 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     loss(X, y) = Flux.logitcrossentropy(ann(X), y)
     opt = ADAM(learningRate)
 
+    opt_state = Flux.setup(Adam(learningRate), ann); 
+    
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
