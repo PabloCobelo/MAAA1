@@ -506,14 +506,12 @@ function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{I
 
     # Paso 5: Calcular la precisión en el conjunto de entrenamiento
     # Ejecutar la red de Hopfield con las imágenes de entrenamiento
-    hopfield_net2 = runHopfield(hopfield_net1,plantilla_imgs_binary)
+    hopfield_net2 = runHopfield(hopfield_net1,train_imgs_binary)
 
     # Clasificar las imágenes reconstruidas
     train_predicted_labels = classifyMNISTImages(hopfield_net2, plantilla_imgs_binary, plantilla_labels)
-
     # Calcular la precisión en el conjunto de entrenamiento
     train_precision = sum(train_predicted_labels .== train_labels) / length(train_labels)
-    println("Precisión en el conjunto de entrenamiento: ", train_precision)
     # Paso 6: Calcular la precisión en el conjunto de test
     # Ejecutar la red de Hopfield con las imágenes de test
     test_reconstructed = runHopfield(hopfield_net1,test_imgs_binary)
@@ -523,7 +521,6 @@ function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{I
 
     # Calcular la precisión en el conjunto de test
     test_accuracy = sum(test_predicted_labels .== test_labels) / length(test_labels)
-    println("Precisión en el conjunto de test: ", test_precision)
     # Devolver la tupla con las precisiones en el conjunto de entrenamiento y test
     return (train_precision, test_accuracy)
 end;
