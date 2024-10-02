@@ -291,33 +291,35 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
 
     # Definir la función de pérdida y el optimizador
     loss(X, y) = Flux.logitcrossentropy(ann(X), y)
-    opt = ADAM(learningRate)
+    opt = Adam(learningRate)
 
     opt_state = Flux.setup(Adam(learningRate), ann); 
-    
+
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
     #Añadir el loss INICIAL a la lista, usando concatenacion
-    loss_history = [loss_history;loss(X,y)]
+    push!(loss_history,loss(X,y))
 
     # Bucle de entrenamiento
     for numEpoch in 1:maxEpochs
 
         # Si es necesario, congelar todas las capas menos las dos últimas
         if trainOnly2LastLayers
+            #Flux.freeze!(opt_state, ann[1:(indexOutputLayer(ann)-2)]);
             Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)]);
         end
 
         # Entrenar una época completa
         Flux.train!(loss, Flux.params(ann), [(X, y)], opt)
+        #Flux.train!(loss, Flux.params(ann), [(X, y)], opt, opt_state)
         
         #Añadir el loss a la lista, usando concatenacion
-        loss_history = [loss_history;loss(X,y)] 
+        push!(loss_history,loss(X,y))
 
         # Chequeo de criterios de parada temprana
         if numEpoch > lossChangeWindowSize
-            lossWindow = trainingLosses[end-lossChangeWindowSize+1:end];
+            lossWindow = loss_history[end-lossChangeWindowSize+1:end];
             minLossValue, maxLossValue = extrema(lossWindow);
             if ((maxLossValue-minLossValue)/minLossValue <= minLossChange)
                 break;
