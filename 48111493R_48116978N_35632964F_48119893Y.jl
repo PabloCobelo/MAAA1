@@ -342,8 +342,6 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     transferFunction::Function=σ,
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
      
-    #Trasponer matrices de entrada
-    trainingDataset = (trainingDataset[1]',trainingDataset[2]')
 
     #Crear RNA sin capas ocultas + entrenarla
     num_inputs = size(trainingDataset[1],2)
