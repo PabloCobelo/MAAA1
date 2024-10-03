@@ -294,6 +294,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     opt = Adam(learningRate)
 
     opt_state = Flux.setup(Adam(learningRate), ann);
+
     #Funcion de loss (documentacion de FAA) 
     loss(model,x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y)
     # Crear el vector para almacenar el historial de pérdida
@@ -310,7 +311,6 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     # Bucle de entrenamiento
     for numEpoch in 1:maxEpochs
 
-        
 
         # Entrenar una época completa
         Flux.train!(loss, Flux.params(ann), [(X, y)], opt)
@@ -330,7 +330,6 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
         
         #Terminar el entrenamiento si el loss supera el minimo
         if loss_history[end] < minLoss
-            println("Deteniendo entrenamiento: loss mínima alcanzada")
             break
         end
     end
@@ -344,8 +343,8 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     transferFunction::Function=σ,
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
      
-    inputs = transpose(trainingDataset[1])
-    targets =transpose(trainingDataset[2])
+    inputs = permutedims(trainingDataset[1])
+    targets = permutedims(trainingDataset[2])
 
     trainingDataset = (inputs,targets)
 
@@ -359,7 +358,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
  
     #Bucle entrenamiento
     #Si fallan valores cambiar 1 por 2
-    for numNeurons in 1:maxNumNeurons
+    for numNeurons in 2:maxNumNeurons
  
         RNA = addClassCascadeNeuron(RNA;transferFunction = transferFunction)
         #Si el numero de neuronas es mayor que  1, congelamos las dos ultimas
