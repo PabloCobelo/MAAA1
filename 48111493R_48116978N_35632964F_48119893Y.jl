@@ -293,29 +293,31 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     loss(X, y) = Flux.logitcrossentropy(ann(X), y)
     opt = Adam(learningRate)
 
-    opt_state = Flux.setup(Adam(learningRate), ann); 
-
+    opt_state = Flux.setup(Adam(learningRate), ann);
+    #Funcion de loss (documentacion de FAA) 
+    loss(model,x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y)
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
+    # Si es necesario, congelar todas las capas menos las dos últimas
+    if trainOnly2LastLayers
+        #Flux.freeze!(opt_state, ann[1:(indexOutputLayer(ann)-2)]);
+        Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)]);
+    end
     #Añadir el loss INICIAL a la lista, usando concatenacion
-    push!(loss_history,loss(X,y))
+    push!(loss_history,loss(RNA,X,y))
 
     # Bucle de entrenamiento
     for numEpoch in 1:maxEpochs
 
-        # Si es necesario, congelar todas las capas menos las dos últimas
-        if trainOnly2LastLayers
-            #Flux.freeze!(opt_state, ann[1:(indexOutputLayer(ann)-2)]);
-            Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)]);
-        end
+        
 
         # Entrenar una época completa
         Flux.train!(loss, Flux.params(ann), [(X, y)], opt)
         #Flux.train!(loss, Flux.params(ann), [(X, y)], opt, opt_state)
         
         #Añadir el loss a la lista, usando concatenacion
-        push!(loss_history,loss(X,y))
+        push!(loss_history,loss(RNA,X,y))
 
         # Chequeo de criterios de parada temprana
         if numEpoch > lossChangeWindowSize
