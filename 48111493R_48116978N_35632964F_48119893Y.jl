@@ -290,11 +290,11 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     y = Float32.(y)
 
     # Definir la función de pérdida y el optimizador
-
     opt_state = Flux.setup(Adam(learningRate), ann);
 
     #Funcion de loss (documentacion de FAA) 
     loss(model,x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y)
+
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
@@ -307,7 +307,8 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     push!(loss_history,loss(ann,X,y))
 
     # Bucle de entrenamiento
-    for numEpoch in 1:maxEpochs
+    
+    for numEpoch  in 1:maxEpochs
 
 
         # Entrenar una época completa
@@ -327,9 +328,10 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
         end;
         
         #Terminar el entrenamiento si el loss supera el minimo
-        if loss_history[end] < minLoss
+        if loss_history[end] > minLoss
             break
         end
+    
     end
 
     return loss_history
