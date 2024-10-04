@@ -298,7 +298,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
-    trainingLoss = loss(ann, inputs, targets)
+    trainingLoss = loss(ann, X, y)
     push!(loss_history, trainingLoss)
 
     # Si es necesario, congelar todas las capas menos las dos últimas
@@ -319,7 +319,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
         
         
         #Añadir el loss a la lista, usando concatenacion
-        trainingLoss = loss(ann, inputs, targets)
+        trainingLoss = loss(ann, X, y)
         push!(loss_history, trainingLoss)
 
         # Chequeo de criterios de parada temprana
