@@ -347,7 +347,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     
     #Crear RNA sin capas ocultas + entrenarla
     num_inputs = size(trainingDataset[1],2)
-    num_outputs = size(trainingDataset[2],2)
+    num_outputs = 2
     RNA = newClassCascadeNetwork(num_inputs,num_outputs)
  
     loss = []
