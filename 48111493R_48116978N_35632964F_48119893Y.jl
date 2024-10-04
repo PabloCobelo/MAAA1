@@ -351,6 +351,10 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     RNA = newClassCascadeNetwork(num_inputs,num_outputs)
  
     loss = []
+
+    print(size(inputs))
+    print(size(targets))
+ 
  
     loss = trainClassANN!(RNA,(inputs,targets),false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
  
