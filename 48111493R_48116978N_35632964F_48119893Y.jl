@@ -500,21 +500,15 @@ function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{I
     train_imgs_binary = train_imgs .>= threshold
     test_imgs_binary = test_imgs .>= threshold
     plantilla_imgs_binary = plantilla_imgs .>= threshold
-
-    # Paso 4: Entrenar la red de Hopfield con las plantillas umbralizadas
-    hopfield_net1 = trainHopfield(plantilla_imgs_binary)  # Asumo que tienes definida una red de Hopfield
-
-    # Paso 5: Calcular la precisión en el conjunto de entrenamiento
-    # Ejecutar la red de Hopfield con las imágenes de entrenamiento
-    hopfield_net2 = runHopfield(hopfield_net1,train_imgs_binary)
+    plantilla_umbralizada = trainHopfield(plantilla_imgs_binary)  
+    train_reconstructed = runHopfield(plantilla_umbralizada,train_imgs_binary)
 
     # Clasificar las imágenes reconstruidas
-    train_predicted_labels = classifyMNISTImages(hopfield_net2, plantilla_imgs_binary, plantilla_labels)
+    train_predicted_labels = classifyMNISTImages(train_reconstructed, plantilla_imgs_binary, plantilla_labels)
     # Calcular la precisión en el conjunto de entrenamiento
     train_precision = sum(train_predicted_labels .== train_labels) / length(train_labels)
     # Paso 6: Calcular la precisión en el conjunto de test
-    # Ejecutar la red de Hopfield con las imágenes de test
-    test_reconstructed = runHopfield(hopfield_net1,test_imgs_binary)
+    test_reconstructed = runHopfield(plantilla_umbralizada,test_imgs_binary)
 
     # Clasificar las imágenes reconstruidas del test
     test_predicted_labels = classifyMNISTImages(test_reconstructed, plantilla_imgs_binary, plantilla_labels)
