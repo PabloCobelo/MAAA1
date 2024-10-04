@@ -9,32 +9,25 @@ using FilePathsBase
 using Flux
 
 function fileNamesFolder(folderName::String, extension::String)
-    # Verificamos si el nombre de carpeta es válido
     if !isdir(folderName)
         error("El nombre de carpeta NO es valido.")
     end
 
-    # Convertir la extensión a mayúsculas
     extension = uppercase(extension)
     
-    # Obtener los nombres de los archivos que terminan con la extensión dada
     fileNames = filter(f -> endswith(uppercase(f), ".$extension"), readdir(folderName))
     
-    # Eliminar la extensión de los nombres de archivo
     fileNamesWithoutExtension = [splitext(f)[1] for f in fileNames]
     
     return fileNamesWithoutExtension
 end;
-#println(typeof(fileNamesFolder("datasets", "tsv")), " ", fileNamesFolder("datasets", "tsv"))
 
 
 using DelimitedFiles
 
     function loadDataset(datasetName::String, datasetFolder::String; datasetType::DataType=Float32)
-        # Construir el nombre completo del archivo
         fileName = joinpath(datasetFolder, datasetName * ".tsv")
     
-        # Verificar si el archivo existe
         if !isfile(fileName)
             return nothing  # Si no se encuentra el archivo, retornar nothing
         end
@@ -42,7 +35,6 @@ using DelimitedFiles
         # Cargar el archivo delimitado por tabulaciones
         dataset = readdlm(fileName, '\t')
     
-        # Obtener los encabezados (primera fila)
         encabezados = dataset[1, :]
     
         # Encontrar la columna correspondiente al "target"
@@ -94,13 +86,10 @@ end;
 
 function loadImagesNCHW(datasetFolder::String; datasetType::DataType=Float32, resolution::Int=128)
     image = fileNamesFolder(datasetFolder, "tif");
-    # Hacerun broadcast de la función loadImage, (aplicar una función a cada elemento de un array)
     images = loadImage.(image, Ref(datasetFolder); datasetType=datasetType, resolution=resolution)
     
-    # Convertir las imágenes al formato NCHW
     nchw_images = convertImagesNCHW(images)
     
-    # Devolver las imágenes en formato NCHW
     return nchw_images
 end;
 
@@ -114,7 +103,6 @@ showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Rea
 
 
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
-    # Cargar el dataset completo desde el archivo MNIST.jld2
     dataset_file = joinpath(datasetFolder, "MNIST.jld2")
     dataset = load(dataset_file)
 
@@ -259,7 +247,6 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
         numOutputsOutputLayer == 1 ? Dense(numInputsOutputLayer + 1, 1, σ) : Chain(Dense(numInputsOutputLayer + 1, numOutputsOutputLayer, identity), softmax)
     );
 
-    # Modificar los pesos y bias de la nueva capa de salida
     # Crear matriz de pesos con una columna adicional
     newWeights = zeros(numOutputsOutputLayer, numInputsOutputLayer + 1);  
     # Copiar pesos antiguos a la nueva matriz, excepto la última columna
@@ -284,12 +271,10 @@ end;
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
 
-    # Preparar el dataset
     X, y = trainingDataset
     X = Float32.(X)
     y = Float32.(y)
 
-    # Definir la función de pérdida y el optimizador
     opt_state = Flux.setup(Adam(learningRate), ann);
 
     #Funcion de loss (documentacion de FAA) 
@@ -301,12 +286,9 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     trainingLoss = loss(ann, X, y)
     push!(loss_history, trainingLoss)
 
-    # Si es necesario, congelar todas las capas menos las dos últimas
     if trainOnly2LastLayers
-        #Flux.freeze!(opt_state, ann[1:(indexOutputLayer(ann)-2)]);
         Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)]);
     end
-    #Añadir el loss INICIAL a la lista, usando concatenacion
     push!(loss_history,loss(ann,X,y))
 
     # Bucle de entrenamiento
@@ -457,7 +439,6 @@ end;
 using Random
 function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
     noiseSet = copy(datasetNCHW)
-    # Seleccionar los índices de las imágenes a modificar
     indices = shuffle(1:length(noiseSet))[1:Int(round(length(noiseSet)*ratioNoise))];
     noiseSet[indices] .= .!noiseSet[indices]
     return noiseSet
@@ -465,7 +446,6 @@ end;
 
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
     cropSet = copy(datasetNCHW)
-    # Obtener las dimensiones del dataset
     N, C, H, W = size(cropSet)
     colu_crop = round(Int(W * ratioCrop)) # imagina 8 x 0.25 --> se recortan 2 columnas
     cropSet[:, :, :, (W - colu_crop + 1):W] .= false #selcciona desde la columna W - colu_crop + 1 hasta W y las pone en false
@@ -503,32 +483,24 @@ function classifyMNISTImages(imageArray::AbstractArray{<:Real,4}, templateInputs
 end;
 
 function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{Int,1}, threshold::Real)
-    # Paso 1: Cargar el dataset MNIST
     train_imgs, train_labels, test_imgs, test_labels = loadMNISTDataset(datasetFolder, labels=labels, datasetType=Float32)
     
-    # Paso 2: Promediar las imágenes de entrenamiento con averageMNISTImages
     plantilla_imgs, plantilla_labels = averageMNISTImages(train_imgs, train_labels)
 
-    # Paso 3: Umbralizar las imágenes con el valor del umbral
     train_imgs_binary = train_imgs .>= threshold
     test_imgs_binary = test_imgs .>= threshold
     plantilla_imgs_binary = plantilla_imgs .>= threshold
-    plantilla_umbralizada = trainHopfield(plantilla_imgs_binary)  
-    train_reconstructed = runHopfield(plantilla_umbralizada,train_imgs_binary)
+    hopfield_net1 = trainHopfield(plantilla_imgs_binary)  # Asumo que tienes definida una red de Hopfield
 
-    # Clasificar las imágenes reconstruidas
-    train_predicted_labels = classifyMNISTImages(train_reconstructed, plantilla_imgs_binary, plantilla_labels)
-    # Calcular la precisión en el conjunto de entrenamiento
+    hopfield_net2 = runHopfield(hopfield_net1,train_imgs_binary)
+
+    train_predicted_labels = classifyMNISTImages(hopfield_net2, plantilla_imgs_binary, plantilla_labels)
     train_precision = sum(train_predicted_labels .== train_labels) / length(train_labels)
-    # Paso 6: Calcular la precisión en el conjunto de test
-    test_reconstructed = runHopfield(plantilla_umbralizada,test_imgs_binary)
+    test_reconstructed = runHopfield(hopfield_net1,test_imgs_binary)
 
-    # Clasificar las imágenes reconstruidas del test
     test_predicted_labels = classifyMNISTImages(test_reconstructed, plantilla_imgs_binary, plantilla_labels)
 
-    # Calcular la precisión en el conjunto de test
     test_accuracy = sum(test_predicted_labels .== test_labels) / length(test_labels)
-    # Devolver la tupla con las precisiones en el conjunto de entrenamiento y test
     return (train_precision, test_accuracy)
 end;
 
