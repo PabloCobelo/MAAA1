@@ -343,10 +343,10 @@ function trainClassCascadeANN(maxNumNeurons::Int,
      
    
     targets = permutedims(trainingDataset[2])
-
+    inputs =permutedims(trainingDataset[1])
     
 
-    trainingDataset = (trainingDataset[1],targets)
+    
 
     #Crear RNA sin capas ocultas + entrenarla
     num_inputs = size(trainingDataset[1],2)
@@ -355,22 +355,22 @@ function trainClassCascadeANN(maxNumNeurons::Int,
  
     loss = []
  
-    loss = trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+    loss = trainClassANN!(RNA,(inputs,targets),false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
  
     #Bucle entrenamiento
-    #Si fallan valores cambiar 1 por 2
+    
     for _ in 1:maxNumNeurons
  
         RNA = addClassCascadeNeuron(RNA;transferFunction = transferFunction)
         #Si el numero de neuronas es mayor que  1, congelamos las dos ultimas
         if length(RNA.layers) > 1 
-            new_loss = trainClassANN!(RNA,trainingDataset,true;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+            new_loss = trainClassANN!(RNA,(inputs,targets),true;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
             
             loss = vcat(loss,new_loss[2:end])
         end;
  
         #Volvemos a entrenar sin congelar
-        new_loss = trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+        new_loss = trainClassANN!(RNA,(inputs,targets),false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
         loss = vcat(loss,new_loss[2:end])
     end;
      
