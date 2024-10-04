@@ -344,30 +344,34 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     inputs = permutedims(trainingDataset[1])
     targets = permutedims(trainingDataset[2])
 
+    inputs = convert(Array{Float32},inputs)
+
     trainingDataset = (inputs,targets)
 
     #Crear RNA sin capas ocultas + entrenarla
     num_inputs = size(trainingDataset[1],2)
+    
     RNA = newClassCascadeNetwork(num_inputs,2)
  
-    loss = Float32[]
+    loss = []
  
     loss = trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
  
     #Bucle entrenamiento
     #Si fallan valores cambiar 1 por 2
-    for numNeurons in 2:maxNumNeurons
+    for _ in 1:maxNumNeurons
  
         RNA = addClassCascadeNeuron(RNA;transferFunction = transferFunction)
         #Si el numero de neuronas es mayor que  1, congelamos las dos ultimas
-        if numNeurons > 1 
-            loss = [loss;trainClassANN!(RNA,trainingDataset,true;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)[2:end]]
+        if length(RNA.layers) > 1 
+            new_loss = trainClassANN!(RNA,trainingDataset,true;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
             
+            loss = vcat(loss,new_loss[2:end])
         end;
  
         #Volvemos a entrenar sin congelar
-        loss = [loss;trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)[2:end]]
- 
+        new_loss = trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+        loss = vcat(loss,new_loss[2:end])
     end;
      
     return RNA, loss
