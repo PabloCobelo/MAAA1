@@ -342,12 +342,9 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
      
    
-    targets = permutedims(trainingDataset[2])
-    inputs =permutedims(trainingDataset[1])
+    inputs = Float32.(trainingDataset[1]')
+    targets = trainingDataset[2]'
     
-
-    
-
     #Crear RNA sin capas ocultas + entrenarla
     num_inputs = size(trainingDataset[1],2)
     num_outputs = size(trainingDataset[2],2)
