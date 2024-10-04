@@ -383,7 +383,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     transferFunction::Function=σ,
     maxEpochs::Int=100, minLoss::Real=0.0, learningRate::Real=0.01, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
     
-    trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
+    trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 2))
 
     return trainClassCascadeANN(maxNumNeurons, trainingDataset; transferFunction = transferFunction,maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
 end;
