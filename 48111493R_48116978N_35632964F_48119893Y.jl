@@ -313,7 +313,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
 
         # Entrenar una época completa
         Flux.train!(loss, Flux.params(ann), [(X, y)], opt_state)
-        #Flux.train!(loss, Flux.params(ann), [(X, y)], opt, opt_state)
+        
         
         #Añadir el loss a la lista, usando concatenacion
         push!(loss_history,loss(ann,X,y))
