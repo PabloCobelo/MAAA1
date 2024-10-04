@@ -290,32 +290,41 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     y = Float32.(y)
 
     # Definir la función de pérdida y el optimizador
-    loss(X, y) = Flux.logitcrossentropy(ann(X), y)
-    opt = ADAM(learningRate)
+    opt_state = Flux.setup(Adam(learningRate), ann);
+
+    #Funcion de loss (documentacion de FAA) 
+    loss(model,x,y) = (size(y,1) == 1) ? Losses.binarycrossentropy(model(x),y) : Losses.crossentropy(model(x),y)
 
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
+    trainingLoss = loss(ann, X, y)
+    push!(loss_history, trainingLoss)
+
+    # Si es necesario, congelar todas las capas menos las dos últimas
+    if trainOnly2LastLayers
+        #Flux.freeze!(opt_state, ann[1:(indexOutputLayer(ann)-2)]);
+        Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)]);
+    end
     #Añadir el loss INICIAL a la lista, usando concatenacion
-    loss_history = [loss_history;loss(X,y)]
+    push!(loss_history,loss(ann,X,y))
 
     # Bucle de entrenamiento
-    for numEpoch in 1:maxEpochs
+    
+    for numEpoch  in 1:maxEpochs
 
-        # Si es necesario, congelar todas las capas menos las dos últimas
-        if trainOnly2LastLayers
-            Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)]);
-        end
 
         # Entrenar una época completa
-        Flux.train!(loss, Flux.params(ann), [(X, y)], opt)
+        Flux.train!(loss, Flux.params(ann), [(X, y)], opt_state)
+        
         
         #Añadir el loss a la lista, usando concatenacion
-        loss_history = [loss_history;loss(X,y)] 
+        trainingLoss = loss(ann, X, y)
+        push!(loss_history, trainingLoss)
 
         # Chequeo de criterios de parada temprana
         if numEpoch > lossChangeWindowSize
-            lossWindow = trainingLosses[end-lossChangeWindowSize+1:end];
+            lossWindow = loss_history[end-lossChangeWindowSize+1:end];
             minLossValue, maxLossValue = extrema(lossWindow);
             if ((maxLossValue-minLossValue)/minLossValue <= minLossChange)
                 break;
@@ -323,10 +332,10 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
         end;
         
         #Terminar el entrenamiento si el loss supera el minimo
-        if loss_history[end] < minLoss
-            println("Deteniendo entrenamiento: loss mínima alcanzada")
+        if loss_history[end] > minLoss
             break
         end
+    
     end
 
     return loss_history
@@ -338,31 +347,35 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     transferFunction::Function=σ,
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
      
-    #Trasponer matrices de entrada
-    trainingDataset = (trainingDataset[1]',trainingDataset[2]')
-
+   
+    inputs = Float32.(trainingDataset[1]')
+    targets = trainingDataset[2]'
+    
     #Crear RNA sin capas ocultas + entrenarla
     num_inputs = size(trainingDataset[1],2)
-    RNA = newClassCascadeNetwork(num_inputs,2)
+    num_outputs = length(unique(trainingDataset[2]))
+    RNA = newClassCascadeNetwork(num_inputs,num_outputs)
  
-    loss = Float32[]
+    loss = []
  
-    loss = trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+ 
+    loss = trainClassANN!(RNA,(inputs,targets),false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
  
     #Bucle entrenamiento
-    #Si fallan valores cambiar 1 por 2
-    for numNeurons in 1:maxNumNeurons
+    
+    for _ in 1:maxNumNeurons
  
         RNA = addClassCascadeNeuron(RNA;transferFunction = transferFunction)
         #Si el numero de neuronas es mayor que  1, congelamos las dos ultimas
-        if numNeurons > 1 
-            loss = [loss;trainClassANN!(RNA,trainingDataset,true;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)[2:end]]
+        if length(RNA.layers) > 1 
+            new_loss = trainClassANN!(RNA,(inputs,targets),true;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
             
+            loss = vcat(loss,new_loss[2:end])
         end;
  
         #Volvemos a entrenar sin congelar
-        loss = [loss;trainClassANN!(RNA,trainingDataset,false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)[2:end]]
- 
+        new_loss = trainClassANN!(RNA,(inputs,targets),false;maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+        loss = vcat(loss,new_loss[2:end])
     end;
      
     return RNA, loss
@@ -374,7 +387,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     transferFunction::Function=σ,
     maxEpochs::Int=100, minLoss::Real=0.0, learningRate::Real=0.01, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
     
-    trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 1))
+    trainingDataset = (trainingDataset[1], reshape(trainingDataset[2], :, 2))
 
     return trainClassCascadeANN(maxNumNeurons, trainingDataset; transferFunction = transferFunction,maxEpochs=maxEpochs,minLoss=minLoss,learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
 end;
