@@ -298,6 +298,9 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     # Crear el vector para almacenar el historial de pérdida
     loss_history = Float32[]
 
+    trainingLoss = loss(ann, inputs, targets)
+    push!(loss_history, trainingLoss)
+
     # Si es necesario, congelar todas las capas menos las dos últimas
     if trainOnly2LastLayers
         #Flux.freeze!(opt_state, ann[1:(indexOutputLayer(ann)-2)]);
@@ -316,7 +319,8 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
         
         
         #Añadir el loss a la lista, usando concatenacion
-        push!(loss_history,loss(ann,X,y))
+        trainingLoss = loss(ann, inputs, targets)
+        push!(loss_history, trainingLoss)
 
         # Chequeo de criterios de parada temprana
         if numEpoch > lossChangeWindowSize
