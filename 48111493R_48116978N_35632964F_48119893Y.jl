@@ -587,9 +587,14 @@ end;
 
 
 function initializeStreamLearningData(datasetFolder::String, windowSize::Int, batchSize::Int)
-    #
-    # Codigo a desarrollar
-    #
+    dataset = loadStreamLearningDataset(datasetFolder)
+    memory = selectInstances(dataset, 1:windowSize)
+    rest_indices = (windowSize + 1):size(dataset.inputs_converted, 1)
+    remaining_data = selectInstances(dataset, rest_indices)
+
+    batches = divideBatches(remaining_data, batchSize; shuffleRows=false)
+
+    return memory, batches
 end;
 
 function addBatch!(memory::Batch, newBatch::Batch)
