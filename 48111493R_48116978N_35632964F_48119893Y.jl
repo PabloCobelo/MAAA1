@@ -627,9 +627,12 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
 end;
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
-    #
-    # Codigo a desarrollar
-    #
+    data, _ = memory #ignoran etiquetas
+    diferencia = data .- instance'
+    diferencia_cuadrado = diferencia .^ 2
+    suma = sum(diferencia_cuadrado, dims=2)
+    distances = sqrt.(suma)
+    return vec(distances)
 end;
 
 function predictKNN(memory::Batch, instance::AbstractArray{<:Real,1}, k::Int)
