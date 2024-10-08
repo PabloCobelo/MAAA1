@@ -511,51 +511,56 @@ end;
 # ------------------------------------- Ejercicio 4 --------------------------------------------
 # ----------------------------------------------------------------------------------------------
 
+using Random
+using Base.Iterators
 
 using ScikitLearn: @sk_import, fit!, predict
 @sk_import svm: SVC
 
 Batch = Tuple{AbstractArray{<:Real,2}, AbstractArray{<:Any,1}}
 
-
 function batchInputs(batch::Batch)
     return batch[1]
 end;
 
 function batchTargets(batch::Batch)
-    return [2]
+    return batch[2]
 end;
 
 function batchLength(batch::Batch)
-    return size(batchInputs(batch), 2)  # Número de columnas (dimensión 2) representa el número de instancias
+    return length(batchTargets(batch))  
 end
 
 
 function selectInstances(batch::Batch, indices::Any)
-    inputs = batchInputs(batch)[:, indices]  # Seleccionar las columnas (instancias) indicadas de las entradas
-    targets = batchTargets(batch)[:, indices]  # Seleccionar las columnas (instancias) indicadas de las salidas
-    return (inputs, targets)
+    inputs = batchInputs(batch)[indices, :] 
+    targets = batchTargets(batch)[indices]  
+        return (inputs, targets)
 end
+
 
 
 function joinBatches(batch1::Batch, batch2::Batch)
-    # Concatenar las entradas (matrices) de los dos lotes
     inputs = vcat(batchInputs(batch1), batchInputs(batch2))
     
-    # Concatenar las salidas deseadas (vectores) de los dos lotes
     targets = vcat(batchTargets(batch1), batchTargets(batch2))
     
-    # Devolver un nuevo lote de datos con la concatenación
     return (inputs, targets)
 end
 
 
 
-function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=false)
-    #
-    # Codigo a desarrollar
-    #
+function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=true)
+    inputs=batchInputs(batch)
+    indices= 1:size(inputs, 1)
+    if shuffleRows
+        indices = shuffle(indices)
+    end
+    batches_indices = partition(indices, batchSize)
+    batches = [selectInstances(dataset, collect(batch_idx)) for batch_idx in batches_indices]
+    return batches
 end;
+
 
 function trainSVM(dataset::Batch, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.,
