@@ -589,13 +589,10 @@ using StatsBase
 function initializeStreamLearningData(datasetFolder::String, windowSize::Int, batchSize::Int)
     dataset = loadStreamLearningDataset(datasetFolder)
     memory = selectInstances(dataset, 1:windowSize)
-    all_indices = 1:length(dataset)
-    rest_indices = setdiff(all_indices, 1:windowSize)
-    remaining_data = selectInstances(dataset, rest_indices)
-
+    remaining_data = selectInstances(dataset, windowSize+1:size(dataset, 1))
     batches = divideBatches(remaining_data, batchSize; shuffleRows=false)
 
-    return memory, batches
+    return memory,batches
 end;
 
 
