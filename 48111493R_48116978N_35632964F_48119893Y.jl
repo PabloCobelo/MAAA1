@@ -593,9 +593,16 @@ function initializeStreamLearningData(datasetFolder::String, windowSize::Int, ba
 end;
 
 function addBatch!(memory::Batch, newBatch::Batch)
-    #
-    # Codigo a desarrollar
-    #
+    batch_size = size(newBatch.inputs,2)
+        
+    memory.inputs[:, 1:end-batch_size] .= memory.inputs[:, batch_size+1:end]
+    memory.outputs[1:end-batch_size] .= memory.outputs[batch_size+1:end]
+
+    # Copiado del nuevo batch al final de la memoria
+    memory.inputs[:, end-batch_size+1:end] .= newBatch.inputs
+    memory.outputs[end-batch_size+1:end] .= newBatch.outputs
+        
+        
 end;
 
 function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
