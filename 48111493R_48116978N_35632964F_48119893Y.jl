@@ -584,7 +584,7 @@ end;
 # ----------------------------------------------------------------------------------------------
 # ------------------------------------- Ejercicio 5 --------------------------------------------
 # ----------------------------------------------------------------------------------------------
-
+using StatsBase
 
 function initializeStreamLearningData(datasetFolder::String, windowSize::Int, batchSize::Int)
     dataset = loadStreamLearningDataset(datasetFolder)
@@ -636,15 +636,15 @@ function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
 end;
 
 function predictKNN(memory::Batch, instance::AbstractArray{<:Real,1}, k::Int)
-    #
-    # Codigo a desarrollar
-    #
+    distancias = euclideanDistances(memory, instance)
+    indices = partialsortperm(distancias, 1:k)
+    _, deseadas = memory
+    nearest_outputs = deseadas[indices]
+    return StatsBase.mode(nearest_outputs)
 end;
 
 function predictKNN(memory::Batch, instances::AbstractArray{<:Real,2}, k::Int)
-    #
-    # Codigo a desarrollar
-    #
+    return [predictKNN(memory, instance, k) for instance in eachrow(instances)]
 end;
 
 function streamLearning_KNN(datasetFolder::String, windowSize::Int, batchSize::Int, k::Int)
