@@ -551,7 +551,7 @@ end
 
 
 function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=true)
-    inputs=batchInputs(batch)
+    inputs=batchInputs(dataset)
     indices= 1:size(inputs, 1)
     if shuffleRows
         indices = shuffle(indices)
@@ -589,13 +589,15 @@ end;
 function initializeStreamLearningData(datasetFolder::String, windowSize::Int, batchSize::Int)
     dataset = loadStreamLearningDataset(datasetFolder)
     memory = selectInstances(dataset, 1:windowSize)
-    rest_indices = (windowSize + 1):size(dataset.inputs_converted, 1)
+    all_indices = 1:length(dataset)
+    rest_indices = setdiff(all_indices, 1:windowSize)
     remaining_data = selectInstances(dataset, rest_indices)
 
     batches = divideBatches(remaining_data, batchSize; shuffleRows=false)
 
     return memory, batches
 end;
+
 
 function addBatch!(memory::Batch, newBatch::Batch)
     batch_size = size(newBatch.inputs,2)
