@@ -682,7 +682,7 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory,kernel,C;degree = degree, gamma = gamma , coef0 = coef0)
 
     #Crear vector antiguedades
-    numInstances = 
+    
     
     #Numero batches
     numBacthes = length(batches)
