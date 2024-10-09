@@ -697,7 +697,7 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
         real = batchTargets(batches[numBatch])
         accuracy = sum( prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
-    end
+
 
 end;
 
