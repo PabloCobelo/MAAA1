@@ -617,7 +617,7 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
 
     #Entrenar SVM practica anterior
     svm = trainSVM(memory,kernel,C;degree = degree, gamma = gamma, coef0 = coef0)
-    
+
     #Numero batches
     numBacthes = length(batches)
 
@@ -628,8 +628,10 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
     for numBatch in 1: numBacthes
 
         #TEST primer batch + introducirlo al vector
-        prec = svm.predict(bacthes[numBatch])
-        v_prec[numBatch] = prec
+        prediction = svm.predict(bacthes[numBatch])
+        real = batchTargets(batches[numBatch])
+        accuracy = sum( prediction .== real) / length(real)
+        v_prec[numBatch] = accuracy
 
         #Actualizar memoria 
         memory = addBatch!(memory,batches[numBatch])
@@ -642,9 +644,7 @@ end;
 
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    #
-    # Codigo a desarrollar
-    #
+    
 end;
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
