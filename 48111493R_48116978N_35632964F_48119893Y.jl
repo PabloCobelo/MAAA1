@@ -587,7 +587,7 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
 end;
 
 
-function trainSVMIncremental(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
+function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
     
     # Definir un batch de vectores de soporte vacío inicialmente
