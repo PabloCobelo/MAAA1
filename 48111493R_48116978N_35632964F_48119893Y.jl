@@ -649,16 +649,16 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
     svm = trainSVM(memory,kernel,C;degree = degree, gamma = gamma, coef0 = coef0)
 
     #Numero batches
-    numBacthes = length(batches)
+    numbatches = length(batches)
 
     #Crear un vector para almacenar precisiones
-    v_accuracy = zeros(numBacthes)
+    v_accuracy = zeros(numbatches)
 
     #Bucle batches
-    for numBatch in 1: numBacthes
+    for numBatch in 1: numbatches
 
         #TEST primer batch + introducirlo al vector
-        prediction = svm.predict(bacthes[numBatch])
+        prediction = svm.predict(batches[numBatch])
         real = batchTargets(batches[numBatch])
         accuracy = sum( prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
@@ -685,19 +685,19 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     
     
     #Numero batches
-    numBacthes = length(batches)
+    numbatches = length(batches)
 
     #Crear un vector para almacenar precisiones
-    v_accuracy = zeros(numBacthes)
+    v_accuracy = zeros(numbatches)
 
     #Bucle
-    for numBatch in 2:numBacthes
+    for numBatch in 2:numbatches
         #Calcular accuracy i batch
-        prediction = svm.predict(bacthes[numBatch])
+        prediction = svm.predict(batches[numBatch])
         real = batchTargets(batches[numBatch])
         accuracy = sum( prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
-
+    end
 
 end;
 
@@ -723,9 +723,18 @@ function predictKNN(memory::Batch, instances::AbstractArray{<:Real,2}, k::Int)
 end;
 
 function streamLearning_KNN(datasetFolder::String, windowSize::Int, batchSize::Int, k::Int)
-    #
-    # Codigo a desarrollar
-    #
+    memory, batches = initializeStreamLearningData(datasetFolder, windowSize, batchSize)
+    numBatches = length(batches)
+    println(numBatches)
+    v_accuracy = zeros(numBatches)
+    for numBatch in 1:numBatches
+        prediction = predictKNN(memory, batches[numBatch], k)
+        real = batchTargets(batches[numBatch])
+        accuracy = sum(prediction .== real) / length(real)
+        v_accuracy[numBatch] = accuracy
+        addBatch!(memory, batches[numBatch])
+    end
+    return v_accuracy
 end;
 # ----------------------------------------------------------------------------------------------
 # ------------------------------------- Ejercicio 6 --------------------------------------------
