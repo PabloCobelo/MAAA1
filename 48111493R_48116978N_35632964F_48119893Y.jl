@@ -652,7 +652,7 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
     numBacthes = length(batches)
 
     #Crear un vector para almacenar precisiones
-    v_prec = zeros(numBacthes)
+    v_accuracy = zeros(numBacthes)
 
     #Bucle batches
     for numBatch in 1: numBacthes
@@ -661,7 +661,7 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
         prediction = svm.predict(bacthes[numBatch])
         real = batchTargets(batches[numBatch])
         accuracy = sum( prediction .== real) / length(real)
-        v_prec[numBatch] = accuracy
+        v_accuracy[numBatch] = accuracy
 
         #Actualizar memoria 
         addBatch!(memory,batches[numBatch])
@@ -669,7 +669,7 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
         #Reentrenar con nueva memoria
         svm = trainSVM(memory,kernel,C ; degree = degree, gamma = gamma, coef0 = coef0)
     end    
-
+    return v_accuracy
 end;
 
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
@@ -677,6 +677,27 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
 
     #Iniciar  memoria + batches
     memory , batches = initializeStreamLearningData(datasetFolder,batchSize,batchSize)
+
+    #Entrenar SVM 
+    svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory,kernel,C;degree = degree, gamma = gamma , coef0 = coef0)
+
+    #Crear vector antiguedades
+    numInstances = 
+    
+    #Numero batches
+    numBacthes = length(batches)
+
+    #Crear un vector para almacenar precisiones
+    v_accuracy = zeros(numBacthes)
+
+    #Bucle
+    for numBatch in 2:numBacthes
+        #Calcular accuracy i batch
+        prediction = svm.predict(bacthes[numBatch])
+        real = batchTargets(batches[numBatch])
+        accuracy = sum( prediction .== real) / length(real)
+        v_accuracy[numBatch] = accuracy
+
 
 end;
 
