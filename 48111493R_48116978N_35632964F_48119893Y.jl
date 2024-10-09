@@ -611,9 +611,33 @@ end;
 
 function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    #
-    # Codigo a desarrollar
-    #
+
+    #Iniciar  memoria + batches
+    memory , batches = initializeStreamLearningData(datasetFolder,windowSize,batchSize)
+
+    #Entrenar SVM practica anterior
+    svm = trainSVM(memory,kernel,C;degree = degree, gamma = gamma, coef0 = coef0)
+    
+    #Numero batches
+    numBacthes = length(batches)
+
+    #Crear un vector para almacenar precisiones
+    v_prec = zeros(numBacthes)
+
+    #Bucle batches
+    for numBatch in 1: numBacthes
+
+        #TEST primer batch + introducirlo al vector
+        prec = svm.predict(bacthes[numBatch])
+        v_prec[numBatch] = prec
+
+        #Actualizar memoria 
+        memory = addBatch!(memory,batches[numBatch])
+
+        #Reentrenar con nueva memoria
+        svm = trainSVM(memory,kernel,C ; degree = degree, gamma = gamma, coef0 = coef0)
+    end    
+
 end;
 
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
