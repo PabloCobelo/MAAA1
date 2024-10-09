@@ -664,7 +664,7 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
         v_prec[numBatch] = accuracy
 
         #Actualizar memoria 
-        memory = addBatch!(memory,batches[numBatch])
+        addBatch!(memory,batches[numBatch])
 
         #Reentrenar con nueva memoria
         svm = trainSVM(memory,kernel,C ; degree = degree, gamma = gamma, coef0 = coef0)
@@ -674,7 +674,10 @@ end;
 
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    
+
+    #Iniciar  memoria + batches
+    memory , batches = initializeStreamLearningData(datasetFolder,batchSize,batchSize)
+
 end;
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
