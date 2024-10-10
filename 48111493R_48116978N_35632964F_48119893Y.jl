@@ -646,7 +646,7 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
     memory, batches = initializeStreamLearningData(datasetFolder, windowSize, batchSize)
 
     # Entrenar SVM practica anterior
-    svm, other_params = trainSVM(memory, kernel, C; degree = degree, gamma = gamma, coef0 = coef0)
+    svm, _ = trainSVM(memory, kernel, C; degree = degree, gamma = gamma, coef0 = coef0)
 
     # Numero batches
     numbatches = length(batches)
@@ -667,7 +667,7 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
         addBatch!(memory, batches[numBatch])
 
         # Reentrenar con nueva memoria
-        svm, other_params = trainSVM(memory, kernel, C; degree = degree, gamma = gamma, coef0 = coef0)
+        svm, _ = trainSVM(memory, kernel, C; degree = degree, gamma = gamma, coef0 = coef0)
     end    
     return v_accuracy
 end;
