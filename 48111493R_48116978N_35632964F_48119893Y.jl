@@ -551,7 +551,7 @@ end;
 
 
 function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=false)
-    inputs=batchInputs(batch)
+    inputs=batchInputs(dataset)
     indices= 1:size(inputs, 1)
     if shuffleRows
         indices = shuffle(indices)
