@@ -658,7 +658,7 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
     for numBatch in 1:numbatches
 
         # TEST primer batch + introducirlo al vector
-        prediction = svm.predict(batches[numBatch])
+        prediction = svm.predict(batchInputs(batches[numBatch]))
         real = batchTargets(batches[numBatch])
         accuracy = sum(prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
