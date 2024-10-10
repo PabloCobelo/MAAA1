@@ -643,31 +643,31 @@ function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::I
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
 
     #Iniciar  memoria + batches
-    memory , batches = initializeStreamLearningData(datasetFolder,windowSize,batchSize)
+    memory, batches = initializeStreamLearningData(datasetFolder, windowSize, batchSize)
 
-    #Entrenar SVM practica anterior
-    svm = trainSVM(memory,kernel,C;degree = degree, gamma = gamma, coef0 = coef0)
+    # Entrenar SVM practica anterior
+    svm, other_params = trainSVM(memory, kernel, C; degree = degree, gamma = gamma, coef0 = coef0)
 
-    #Numero batches
+    # Numero batches
     numbatches = length(batches)
 
-    #Crear un vector para almacenar precisiones
+    # Crear un vector para almacenar precisiones
     v_accuracy = zeros(numbatches)
 
-    #Bucle batches
-    for numBatch in 1: numbatches
+    # Bucle batches
+    for numBatch in 1:numbatches
 
-        #TEST primer batch + introducirlo al vector
+        # TEST primer batch + introducirlo al vector
         prediction = svm.predict(batches[numBatch])
         real = batchTargets(batches[numBatch])
-        accuracy = sum( prediction .== real) / length(real)
+        accuracy = sum(prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
 
-        #Actualizar memoria 
-        addBatch!(memory,batches[numBatch])
+        # Actualizar memoria 
+        addBatch!(memory, batches[numBatch])
 
-        #Reentrenar con nueva memoria
-        svm = trainSVM(memory,kernel,C ; degree = degree, gamma = gamma, coef0 = coef0)
+        # Reentrenar con nueva memoria
+        svm, other_params = trainSVM(memory, kernel, C; degree = degree, gamma = gamma, coef0 = coef0)
     end    
     return v_accuracy
 end;
