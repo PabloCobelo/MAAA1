@@ -725,10 +725,9 @@ end;
 function streamLearning_KNN(datasetFolder::String, windowSize::Int, batchSize::Int, k::Int)
     memory, batches = initializeStreamLearningData(datasetFolder, windowSize, batchSize)
     numBatches = length(batches)
-    println(numBatches)
     v_accuracy = zeros(numBatches)
     for numBatch in 1:numBatches
-        prediction = predictKNN(memory, batches[numBatch], k)
+        prediction = predictKNN(memory, batchInputs(batches[numBatch]), k)
         real = batchTargets(batches[numBatch])
         accuracy = sum(prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
