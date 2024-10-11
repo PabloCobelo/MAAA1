@@ -627,16 +627,18 @@ end;
 
 
 function addBatch!(memory::Batch, newBatch::Batch)
-    batch_size = size(newBatch.inputs,2)
-        
-    memory.inputs[:, 1:end-batch_size] .= memory.inputs[:, batch_size+1:end]
-    memory.outputs[1:end-batch_size] .= memory.outputs[batch_size+1:end]
-
-    # Copiado del nuevo batch al final de la memoria
-    memory.inputs[:, end-batch_size+1:end] .= newBatch.inputs
-    memory.outputs[end-batch_size+1:end] .= newBatch.outputs
-        
-        
+    memory_inputs, memory_outputs = memory
+    new_inputs, new_outputs = newBatch
+    
+    num_new_data = size(new_inputs, 2)
+    
+    memory_inputs = memory_inputs[:, num_new_data+1:end]
+    memory_outputs = memory_outputs[num_new_data+1:end]
+    
+    memory_inputs = hcat(memory_inputs, new_inputs)
+    memory_outputs = vcat(memory_outputs, new_outputs)
+    
+    memory = (memory_inputs, memory_outputs)
 end;
 
 function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
