@@ -629,15 +629,17 @@ end;
 function addBatch!(memory::Batch, newBatch::Batch)
     input_memory, output_memory = memory
     new_input, new_output = newBatch
-    
+
     num_new_data = size(new_input, 2)
+
     
+    # Desplazamiento de los datos
     input_memory[:, 1:end-num_new_data] .= input_memory[:, num_new_data+1:end]
     input_memory[:, end-num_new_data+1:end] .= new_input
-    
+
     output_memory[1:end-num_new_data] .= output_memory[num_new_data+1:end]
     output_memory[end-num_new_data+1:end] .= new_output
-    
+
     return memory
 end;
 
@@ -677,31 +679,49 @@ end;
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
 
-    #Iniciar  memoria + batches
-    memory , batches = initializeStreamLearningData(datasetFolder,batchSize,batchSize)
+# Iniciar memoria y lotes de datos
+memory, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize)
 
-    #Entrenar SVM 
-    svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory,kernel,C;degree = degree, gamma = gamma , coef0 = coef0)
+# Entrenar el SVM con los datos iniciales en memoria
+svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
 
-    #Crear vector antiguedades
-    
-    
-    #Numero batches
-    numbatches = length(batches)
+# Número de lotes en total
+numbatches = length(batches)
 
-    #Crear un vector para almacenar precisiones
-    v_accuracy = zeros(numbatches)
+# Crear un vector para almacenar las precisiones
+v_accuracy = zeros(numbatches)
 
-    #Bucle
-    for numBatch in 2:numbatches
-        #Calcular accuracy i batch
-        prediction = svm.predict(batches[numBatch])
-        real = batchTargets(batches[numBatch])
-        accuracy = sum( prediction .== real) / length(real)
-        v_accuracy[numBatch] = accuracy
-    end
+# Bucle para procesar cada batch y calcular la precisión
+for numBatch in 2:numbatches
+# Verificar la forma del lote de datos antes de la predicción
+batch_data = batches[numBatch]
 
-end;
+# Asegurarse de que batch_data sea un arreglo homogéneo de tamaño (n_samples, n_features)
+if typeof(batch_data) <: Array
+if ndims(batch_data) == 1
+batch_data = reshape(batch_data, :, 1)  # Convertir a 2D si es necesario
+end
+elseif typeof(batch_data) <: Vector
+batch_data = hcat(batch_data...)  # Convertir lista de vectores a matriz
+end
+
+# Convertir a Array de Float64, si es necesario
+batch_data = convert(Array{Float64}, batch_data)
+
+# Realizar la predicción
+prediction = svm.predict(batch_data)
+
+# Obtener los valores reales de salida para el batch
+real = batchTargets(batches[numBatch])
+
+# Calcular la precisión
+accuracy = sum(prediction .== real) / length(real)
+v_accuracy[numBatch] = accuracy
+end
+
+return v_accuracy
+end
+
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
     data, _ = memory #ignoran etiquetas
