@@ -580,7 +580,7 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
     indices_support_passed = indicesNewSupportVectors[indicesNewSupportVectors .<= N]
     indices_support_training = indicesNewSupportVectors[indicesNewSupportVectors .> N] .- N
 
-    support_vectors = selectInstances(dataset, indices_support_passed)  
+    support_vectors = selectInstances(supportVectors, indices_support_passed)  
     training_vectors = selectInstances(dataset, indices_support_training)  
     
     return  model,joinBatches(support_vectors,training_vectors),(indices_support_passed,indices_support_training)
