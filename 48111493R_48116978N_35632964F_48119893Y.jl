@@ -627,22 +627,33 @@ end;
 
 
 function addBatch!(memory::Batch, newBatch::Batch)
-    # Extract input matrix and output vector from memory and newBatch
-    memory_inputs = batchInputs(memory)
-    memory_outputs = batchTargets(memory)
-    new_inputs = batchInputs(newBatch)
-    new_outputs = batchTargets(newBatch)
+    # Número de ejemplos en el nuevo batch
+    n_new = batchLength(newBatch)
     
-    # Number of new instances
-    num_new_instances = batchLength(newBatch)
+    # Número de ejemplos en la memoria
+    n_mem = batchLength(memory)
     
-    # Shift existing data in memory to the beginning, discarding the oldest data
-    memory_inputs[:, 1:end-num_new_instances] = memory_inputs[:, num_new_instances+1:end]
-    memory_outputs[1:end-num_new_instances] = memory_outputs[num_new_instances+1:end]
+    # Verificamos que el nuevo lote no sea más grande que la memoria
+    if n_new > n_mem
+        throw(DimensionMismatch("El nuevo lote es más grande que la memoria disponible."))
+    end
     
-    # Copy new data to the end of memory
-    memory_inputs[:, end-num_new_instances+1:end] = new_inputs
-    memory_outputs[end-num_new_instances+1:end] = new_outputs
+    # Desplazamos los datos antiguos en la memoria
+    # Para la matriz de inputs (desplazamiento de filas)
+    inputs_mem = batchInputs(memory)
+    inputs_mem[1:end-n_new, :] .= inputs_mem[n_new+1:end, :]
+    
+    # Para los targets
+    targets_mem = batchTargets(memory)
+    targets_mem[1:end-n_new] .= targets_mem[n_new+1:end]
+    
+    # Insertamos los nuevos datos en las últimas posiciones de la memoria
+    inputs_new = batchInputs(newBatch)
+    targets_new = batchTargets(newBatch)
+    
+    # Asignamos los nuevos datos a las últimas filas
+    inputs_mem[end-n_new+1:end, :] = inputs_new
+    targets_mem[end-n_new+1:end] = targets_new
 end;
 
 function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
