@@ -627,20 +627,22 @@ end;
 
 
 function addBatch!(memory::Batch, newBatch::Batch)
-    input_memory, output_memory = memory
-    new_input, new_output = newBatch
-
-    num_new_data = size(new_input, 2)
-
+    # Extract input matrix and output vector from memory and newBatch
+    memory_inputs = batchInputs(memory)
+    memory_outputs = batchTargets(memory)
+    new_inputs = batchInputs(newBatch)
+    new_outputs = batchTargets(newBatch)
     
-    # Desplazamiento de los datos
-    input_memory[:, 1:end-num_new_data] .= input_memory[:, num_new_data+1:end]
-    input_memory[:, end-num_new_data+1:end] .= new_input
-
-    output_memory[1:end-num_new_data] .= output_memory[num_new_data+1:end]
-    output_memory[end-num_new_data+1:end] .= new_output
-
-    return memory
+    # Number of new instances
+    num_new_instances = batchLength(newBatch)
+    
+    # Shift existing data in memory to the beginning, discarding the oldest data
+    memory_inputs[:, 1:end-num_new_instances] = memory_inputs[:, num_new_instances+1:end]
+    memory_outputs[1:end-num_new_instances] = memory_outputs[num_new_instances+1:end]
+    
+    # Copy new data to the end of memory
+    memory_inputs[:, end-num_new_instances+1:end] = new_inputs
+    memory_outputs[end-num_new_instances+1:end] = new_outputs
 end;
 
 function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
