@@ -682,7 +682,8 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory,kernel,C;degree = degree, gamma = gamma , coef0 = coef0)
 
     #Crear vector antiguedades
-    
+    lengthInitialBatch = batchSize(memory)
+    v_old = collect(lengthInitialBatch:-1:1)
     
     #Numero batches
     numbatches = length(batches)
@@ -690,13 +691,18 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     #Crear un vector para almacenar precisiones
     v_accuracy = zeros(numbatches)
 
-    #Bucle
+    #Bucle, se empieza en el segundo elemento xq ya se entreno con el primer batch
     for numBatch in 2:numbatches
         #Calcular accuracy i batch
         prediction = svm.predict(batches[numBatch])
         real = batchTargets(batches[numBatch])
         accuracy = sum( prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
+
+        #Actualizar vector edades
+        lBatchi = batchSize(batches[numBatch])
+        v_old = v_old .+ lBatchi
+        
     end
 
 end;
