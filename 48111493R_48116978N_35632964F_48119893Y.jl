@@ -583,7 +583,7 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
     support_vectors = selectInstances(dataset, indices_support_passed)  
     training_vectors = selectInstances(dataset, indices_support_training)  
     
-    return  model,joinBatches(training_vectors,support_vectors),(indices_support_passed,indices_support_training)
+    return  model,joinBatches(support_vectors,training_vectors),(indices_support_passed,indices_support_training)
 end;
 
 
