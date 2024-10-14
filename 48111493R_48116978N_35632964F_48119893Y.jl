@@ -580,10 +580,10 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
     indices_support_passed = indicesNewSupportVectors[indicesNewSupportVectors .<= N]
     indices_support_training = indicesNewSupportVectors[indicesNewSupportVectors .> N] .- N
 
-    support_vectors = selectInstances(dataset, indices_support_passed)  
+    support_vectors = selectInstances(supportVectors, indices_support_passed)  
     training_vectors = selectInstances(dataset, indices_support_training)  
     
-    return  model,joinBatches(training_vectors,support_vectors),(indices_support_passed,indices_support_training)
+    return  model,joinBatches(support_vectors,training_vectors),(indices_support_passed,indices_support_training)
 end;
 
 
@@ -627,16 +627,20 @@ end;
 
 
 function addBatch!(memory::Batch, newBatch::Batch)
-    batch_size = size(newBatch.inputs,2)
-        
-    memory.inputs[:, 1:end-batch_size] .= memory.inputs[:, batch_size+1:end]
-    memory.outputs[1:end-batch_size] .= memory.outputs[batch_size+1:end]
+    input_memory, output_memory = memory
+    new_input, new_output = newBatch
 
-    # Copiado del nuevo batch al final de la memoria
-    memory.inputs[:, end-batch_size+1:end] .= newBatch.inputs
-    memory.outputs[end-batch_size+1:end] .= newBatch.outputs
-        
-        
+    num_new_data = size(new_input, 2)
+
+    
+    # Desplazamiento de los datos
+    input_memory[:, 1:end-num_new_data] .= input_memory[:, num_new_data+1:end]
+    input_memory[:, end-num_new_data+1:end] .= new_input
+
+    output_memory[1:end-num_new_data] .= output_memory[num_new_data+1:end]
+    output_memory[end-num_new_data+1:end] .= new_output
+
+    return memory
 end;
 
 function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
@@ -675,11 +679,11 @@ end;
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
 
-    #Iniciar  memoria + batches
-    memory , batches = initializeStreamLearningData(datasetFolder,batchSize,batchSize)
+# Iniciar memoria y lotes de datos
+memory, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize)
 
-    #Entrenar SVM 
-    svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory,kernel,C;degree = degree, gamma = gamma , coef0 = coef0)
+# Entrenar el SVM con los datos iniciales en memoria
+svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
 
     #Crear vector antiguedades
     lengthInitialBatch = batchSize(memory)
@@ -688,8 +692,10 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     #Numero batches
     numbatches = length(batches)
 
-    #Crear un vector para almacenar precisiones
-    v_accuracy = zeros(numbatches)
+
+# Crear un vector para almacenar las precisiones
+v_accuracy = zeros(numbatches)
+
 
     #Bucle, se empieza en el segundo elemento xq ya se entreno con el primer batch
     for numBatch in 2:numbatches
@@ -705,7 +711,6 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
         
     end
 
-end;
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
     data, _ = memory #ignoran etiquetas
@@ -731,10 +736,9 @@ end;
 function streamLearning_KNN(datasetFolder::String, windowSize::Int, batchSize::Int, k::Int)
     memory, batches = initializeStreamLearningData(datasetFolder, windowSize, batchSize)
     numBatches = length(batches)
-    println(numBatches)
     v_accuracy = zeros(numBatches)
     for numBatch in 1:numBatches
-        prediction = predictKNN(memory, batches[numBatch], k)
+        prediction = predictKNN(memory, batchInputs(batches[numBatch]), k)
         real = batchTargets(batches[numBatch])
         accuracy = sum(prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
