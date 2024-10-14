@@ -679,11 +679,11 @@ end;
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
 
-# Iniciar memoria y lotes de datos
-memory, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize)
+    # Iniciar memoria y lotes de datos
+    memory, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize)
 
-# Entrenar el SVM con los datos iniciales en memoria
-svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
+    # Entrenar el SVM con los datos iniciales en memoria
+    svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
 
     #Crear vector antiguedades
     lengthInitialBatch = batchSize(memory)
@@ -693,8 +693,8 @@ svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory, kernel
     numbatches = length(batches)
 
 
-# Crear un vector para almacenar las precisiones
-v_accuracy = zeros(numbatches)
+    # Crear un vector para almacenar las precisiones
+    v_accuracy = zeros(numbatches)
 
 
     #Bucle, se empieza en el segundo elemento xq ya se entreno con el primer batch
@@ -711,6 +711,7 @@ v_accuracy = zeros(numbatches)
         
     end
 
+end;
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
     data, _ = memory #ignoran etiquetas
