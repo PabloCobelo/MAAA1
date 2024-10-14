@@ -679,39 +679,49 @@ end;
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
 
-    # Iniciar memoria y lotes de datos
-    memory, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize)
+# Iniciar memoria y lotes de datos
+memory, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize)
 
-    # Entrenar el SVM con los datos iniciales en memoria
-    svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
+# Entrenar el SVM con los datos iniciales en memoria
+svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
 
-    #Crear vector antiguedades
-    lengthInitialBatch = batchSize(memory)
-    v_old = collect(lengthInitialBatch:-1:1)
-    
-    #Numero batches
-    numbatches = length(batches)
+# Número de lotes en total
+numbatches = length(batches)
 
+# Crear un vector para almacenar las precisiones
+v_accuracy = zeros(numbatches)
 
-    # Crear un vector para almacenar las precisiones
-    v_accuracy = zeros(numbatches)
+# Bucle para procesar cada batch y calcular la precisión
+for numBatch in 2:numbatches
+# Verificar la forma del lote de datos antes de la predicción
+batch_data = batches[numBatch]
 
+# Asegurarse de que batch_data sea un arreglo homogéneo de tamaño (n_samples, n_features)
+if typeof(batch_data) <: Array
+if ndims(batch_data) == 1
+batch_data = reshape(batch_data, :, 1)  # Convertir a 2D si es necesario
+end
+elseif typeof(batch_data) <: Vector
+batch_data = hcat(batch_data...)  # Convertir lista de vectores a matriz
+end
 
-    #Bucle, se empieza en el segundo elemento xq ya se entreno con el primer batch
-    for numBatch in 2:numbatches
-        #Calcular accuracy i batch
-        prediction = svm.predict(batches[numBatch])
-        real = batchTargets(batches[numBatch])
-        accuracy = sum( prediction .== real) / length(real)
-        v_accuracy[numBatch] = accuracy
+# Convertir a Array de Float64, si es necesario
+batch_data = convert(Array{Float64}, batch_data)
 
-        #Actualizar vector edades
-        lBatchi = batchSize(batches[numBatch])
-        v_old = v_old .+ lBatchi
-        
-    end
+# Realizar la predicción
+prediction = svm.predict(batch_data)
 
-end;
+# Obtener los valores reales de salida para el batch
+real = batchTargets(batches[numBatch])
+
+# Calcular la precisión
+accuracy = sum(prediction .== real) / length(real)
+v_accuracy[numBatch] = accuracy
+end
+
+return v_accuracy
+end
+
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
     data, _ = memory #ignoran etiquetas
@@ -753,13 +763,20 @@ end;
 
 
 function predictKNN_SVM(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int, C::Real)
-    #
-    # Codigo a desarrollar
-    #
+    distancias= euclideanDistances(dataset,instance)
+    indices_cerca=partialsortperm(distancias,k)
+    clases_cerca=dataset[indices_cerca]
+    if length(unique(clases_cerca))==1
+        return clases_cerca[1]
+    end
+    svm_model = SVC(C=C, kernel="linear", random_state=1)
+    fit!(svm_model, dataset[indices_cerca, :], clases_cerca)
+    instanciaspred=reshape(dataset[indices_cerca, :],1,:)
+
+    prediction=predict(svm_model,instanciaspred)
+    return prediction[1]
 end;
 
 function predictKNN_SVM(dataset::Batch, instances::AbstractArray{<:Real,2}, k::Int, C::Real)
-    #
-    # Codigo a desarrollar
-    #
+    return [predictKNN_SVM(dataset , instance, k,C) for instance in eachrow(instances)]
 end;
