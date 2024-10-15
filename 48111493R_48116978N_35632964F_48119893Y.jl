@@ -776,13 +776,13 @@ end;
 function predictKNN_SVM(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int, C::Real)
     distancias= euclideanDistances(dataset,instance)
     indices_cerca=partialsortperm(distancias,k)
-    clases_cerca=dataset[indices_cerca]
+    clases_cerca = dataset[2][indices_cerca]
     if length(unique(clases_cerca))==1
         return clases_cerca[1]
     end
     svm_model = SVC(C=C, kernel="linear", random_state=1)
-    fit!(svm_model, dataset[indices_cerca, :], clases_cerca)
-    instanciaspred=reshape(dataset[indices_cerca, :],1,:)
+    fit!(svm_model, dataset[1][indices_cerca, :], clases_cerca)
+    instanciaspred=reshape(instance,1,:)
 
     prediction=predict(svm_model,instanciaspred)
     return prediction[1]
