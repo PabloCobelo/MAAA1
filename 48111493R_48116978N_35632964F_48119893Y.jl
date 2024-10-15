@@ -591,16 +591,14 @@ function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
     
     # Definir un batch de vectores de soporte vacío inicialmente
-    supportVectors = (zeros(0, batchLength(batches[1])), zeros(0))  
-
+    supportVectors = (Array{eltype(batches[1][1]),2}(undef, 0, size(batches[1][1], 2)),Array{eltype(batches[1][2]),1}(undef, 0))
     # Crear una variable para el modelo entrenado
     model = nothing  # Inicializar el modelo
 
     # Iterar sobre todos los lotes de datos
     for batch in batches
-        model, supportVectors, _ = trainSVM(batch, kernel, C, 
-                                             degree=degree, gamma=gamma, coef0=coef0, 
-                                             supportVectors=supportVectors)
+        model, supportVectors1, _ = trainSVM(batch, kernel, C, degree=degree, gamma=gamma, coef0=coef0, supportVectors=supportVectors)
+        supportVectors=supportVectors1
     end
 
     # Devolver el último modelo entrenado
