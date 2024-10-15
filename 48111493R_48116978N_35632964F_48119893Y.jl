@@ -566,13 +566,13 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.,
     supportVectors::Batch=( Array{eltype(dataset[1]),2}(undef,0,size(dataset[1],2)) , Array{eltype(dataset[2]),1}(undef,0) ) )
     if supportVectors !== nothing
-        dataset = joinBatches(supportVectors, dataset)
+        newbatch = joinBatches(supportVectors, dataset)
         N = batchLength(supportVectors)
     else
         N=0
     end
-    inputs =batchInputs(dataset)
-    outputs =batchTargets(dataset)
+    inputs =batchInputs(newbatch)
+    outputs =batchTargets(newbatch)
     model = SVC(kernel=kernel, C=C, gamma=gamma, coef0=coef0, degree=degree, random_state=1);
     fit!(model,inputs,outputs)
     indicesNewSupportVectors = sort(model.support_.+1);
