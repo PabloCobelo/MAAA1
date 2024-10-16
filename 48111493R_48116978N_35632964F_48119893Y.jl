@@ -773,7 +773,7 @@ function predictKNN_SVM(dataset::Batch, instance::AbstractArray{<:Real,1}, k::In
     clases_cerca = dataset[2][indices_cerca]
 
     if length(unique(clases_cerca)) == 1
-        return clases_cerca[1]
+        return [clases_cerca[1]]
     end
 
     svm_model = SVC(C = C, kernel = "linear", random_state = 1)
