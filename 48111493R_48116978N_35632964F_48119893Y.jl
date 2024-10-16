@@ -690,15 +690,18 @@ end;
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
 
- # Iniciar memoria y lotes de datos
+    # Iniciar memoria y lotes de datos
     memory, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize)
 
     # Entrenar el SVM con los datos iniciales en memoria
-    svm, supportVectors, indicesSupportVectorsInFirstBatch = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
+    svm, supportVectors, ( _ , indicesSupportVectorsInFirstBatch) = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
 
     #Crear vector antiguedades
-    lengthInitialBatch = batchSize(memory)
-    v_old = collect(lengthInitialBatch:-1:1)
+    lengthInitialBatch = batchLength(memory)
+
+    vOldPatrones = collect(lengthInitialBatch:-1:1)
+
+    vOldSupportVectors = selectInstances(vOldPatrones,indicesSupportVectorsInFirstBatch)    
     
     #Numero batches
     numbatches = length(batches)
@@ -715,11 +718,30 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
         accuracy = sum( prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
 
-        #Actualizar vector edades
+        #Actualizar vector edades + creo que falta añadir los nuevos indices?
         lBatchi = batchSize(batches[numBatch])
         v_old = v_old .+ lBatchi
-        
+
+        #Seleccionar indices 
+        indices = []
+        for i in 1:lBatchi
+            if v_old[i] <= windowSize
+                push!(indices,i)
+            end
+        end
+
+       supportVectors = selectInstances(supportVectors,indices)
+       v_old = selectInstances(v_old,indices)
+
+       #Aqui se deberia aumentar la memory intuyo
+       addBatch!(memory, batches[numBatch])
+       #Volver a entrenar
+       svm, supportVectors, (indices_support_passed,indices_support_training) = trainSVM(memory, kernel, C; supportVectors = supportVectors, degree=degree, gamma=gamma, coef0=coef0)
+
+       #Crear  nuevos lotes  
+        new_conj = joinBatches(selectInstances(supportVectors,indices_support_passed), selectInstances(bacthes[numBatch],indices_support_training))
     end
+    return v_accuracy
 end
 
 
