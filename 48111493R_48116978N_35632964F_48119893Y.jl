@@ -769,7 +769,7 @@ function predictKNN_SVM(dataset::Batch, instance::AbstractArray{<:Real,1}, k::In
     end
 
     distancias = euclideanDistances(dataset, instance)
-    indices_cerca = partialsortperm(distancias, k)
+    indices_cerca = partialsortperm(distancias, 1:k)
     clases_cerca = dataset[2][indices_cerca]
 
     if length(unique(clases_cerca)) == 1
