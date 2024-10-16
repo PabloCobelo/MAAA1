@@ -774,19 +774,27 @@ end;
 
 
 function predictKNN_SVM(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int, C::Real)
-    distancias= euclideanDistances(dataset,instance)
-    indices_cerca=partialsortperm(distancias,k)
+    n_instances = size(dataset[1], 1) # Número de instancias en dataset
+    if k > n_instances
+        error("El valor de k es mayor que el número de instancias en el dataset.")
+    end
+
+    distancias = euclideanDistances(dataset, instance)
+    indices_cerca = partialsortperm(distancias, k)
     clases_cerca = dataset[2][indices_cerca]
-    if length(unique(clases_cerca))==1
+
+    if length(unique(clases_cerca)) == 1
         return clases_cerca[1]
     end
-    svm_model = SVC(C=C, kernel="linear", random_state=1)
-    fit!(svm_model, dataset[1][indices_cerca, :], clases_cerca)
-    instanciaspred=reshape(instance,1,:)
 
-    prediction=predict(svm_model,instanciaspred)
+    svm_model = SVC(C = C, kernel = "linear", random_state = 1)
+    fit!(svm_model, dataset[1][indices_cerca, :], clases_cerca)
+    instanciaspred = reshape(instance, 1, :)
+
+    prediction = predict(svm_model, instanciaspred)
     return prediction[1]
-end;
+end
+
 
 function predictKNN_SVM(dataset::Batch, instances::AbstractArray{<:Real,2}, k::Int, C::Real)
     return [predictKNN_SVM(dataset , instance, k,C) for instance in eachrow(instances)]
