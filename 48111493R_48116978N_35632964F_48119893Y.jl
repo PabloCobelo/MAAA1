@@ -697,9 +697,8 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     svm, supportVectors, ( _ , indicesSupportVectorsInFirstBatch) = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
 
     #Crear vector antiguedades
-
     vOldPatrones = collect(batchSize:-1:1)
-    vOldSupportVectors = selectInstances(vOldPatrones,indicesSupportVectorsInFirstBatch)    
+    vOldSupportVectors = selectInstances(memory, indicesSupportVectorsInFirstBatch)[2]  # Extract targets
     
     #Numero batches
     numbatches = length(batches)
@@ -707,11 +706,10 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     # Crear un vector para almacenar las precisiones
     v_accuracy = zeros(numbatches)
 
-
     #Bucle, se empieza en el segundo elemento xq ya se entreno con el primer batch
     for numBatch in 2:numbatches
         #Calcular accuracy i batch
-        prediction = svm.predict(batches[numBatch])
+        prediction = svm.predict(batchInputs(batches[numBatch]))
         real = batchTargets(batches[numBatch])
         accuracy = sum( prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
@@ -721,8 +719,9 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
 
         #Seleccionar indices 
         indices = findall(x -> x <= windowSize, vOldSupportVectors)
-        supportVectors = selectInstances(supportVectors,indices)
-        vOldSupportVectors = selectInstances(vOldSupportVectors,indices)
+        indices = indices[indices .<= size(batchInputs(memory), 1)]  # Ensure indices are within bounds
+        supportVectors = selectInstances(memory, indices)
+        vOldSupportVectors = selectInstances((batchInputs(memory), vOldSupportVectors), indices)[2]
 
         #Aqui se deberia aumentar la memory intuyo
         addBatch!(memory, batches[numBatch])
@@ -730,20 +729,23 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
         #Volver a entrenar
         svm, _ , (indices_support_passed,indices_support_training) = trainSVM(memory, kernel, C; supportVectors = supportVectors, degree=degree, gamma=gamma, coef0=coef0)
 
-       #Crear  nuevos lotes                                                                             ¿CAMBIAR batches[numBatch] POR memory?
-        supportVectors = joinBatches(selectInstances(supportVectors,indices_support_passed), selectInstances(batches[numBatch],indices_support_training))
+        #Crear  nuevos lotes
+        indices_support_passed = indices_support_passed[indices_support_passed .<= size(batchInputs(supportVectors), 1)]
+        indices_support_training = indices_support_training[indices_support_training .<= size(batchInputs(batches[numBatch]), 1)]
+        supportVectors = joinBatches(selectInstances(supportVectors, indices_support_passed), selectInstances(batches[numBatch], indices_support_training))
 
         #Vector edades
-        vOldx2SupportVectors = selectInstances(vOldSupportVectors,indices_support_passed)
+        indices_support_passed = indices_support_passed[indices_support_passed .<= size(batchInputs(memory), 1)]
+        vOldx2SupportVectors = selectInstances((batchInputs(memory), vOldSupportVectors), indices_support_passed)[2]
 
         vOldPatrones = collect(batchLength(batches[numBatch]):-1:1)
-        vOldNewSupportVectors   = selectInstances(vOldPatrones,indices_support_training)
+        indices_support_training = indices_support_training[indices_support_training .<= size(batchInputs(memory), 1)]
+        vOldNewSupportVectors = selectInstances((batchInputs(memory), vOldPatrones), indices_support_training)[2]
 
-        vOldSupportVectors = vcat(vOldx2SupportVectors,vOldNewSupportVectors)
-
+        vOldSupportVectors = vcat(vOldx2SupportVectors, vOldNewSupportVectors)
     end
     return v_accuracy
-end
+end;
 
 
 function euclideanDistances(memory::Batch, instance::AbstractArray{<:Real,1})
