@@ -697,10 +697,8 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     svm, supportVectors, ( _ , indicesSupportVectorsInFirstBatch) = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0)
 
     #Crear vector antiguedades
-    lengthInitialBatch = batchLength(memory)
 
-    vOldPatrones = collect(lengthInitialBatch:-1:1)
-
+    vOldPatrones = collect(batchSize:-1:1)
     vOldSupportVectors = selectInstances(vOldPatrones,indicesSupportVectorsInFirstBatch)    
     
     #Numero batches
@@ -719,27 +717,30 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
         v_accuracy[numBatch] = accuracy
 
         #Actualizar vector edades + creo que falta añadir los nuevos indices?
-        lBatchi = batchSize(batches[numBatch])
-        v_old = v_old .+ lBatchi
+        vOldSupportVectors = vOldSupportVectors .+ batchSize
 
         #Seleccionar indices 
-        indices = []
-        for i in 1:lBatchi
-            if v_old[i] <= windowSize
-                push!(indices,i)
-            end
-        end
+        indices = findall(x -> x <= windowSize, vOldSupportVectors)
+        supportVectors = selectInstances(supportVectors,indices)
+        vOldSupportVectors = selectInstances(vOldSupportVectors,indices)
 
-       supportVectors = selectInstances(supportVectors,indices)
-       v_old = selectInstances(v_old,indices)
+        #Aqui se deberia aumentar la memory intuyo
+        addBatch!(memory, batches[numBatch])
 
-       #Aqui se deberia aumentar la memory intuyo
-       addBatch!(memory, batches[numBatch])
-       #Volver a entrenar
-       svm, supportVectors, (indices_support_passed,indices_support_training) = trainSVM(memory, kernel, C; supportVectors = supportVectors, degree=degree, gamma=gamma, coef0=coef0)
+        #Volver a entrenar
+        svm, _ , (indices_support_passed,indices_support_training) = trainSVM(memory, kernel, C; supportVectors = supportVectors, degree=degree, gamma=gamma, coef0=coef0)
 
-       #Crear  nuevos lotes  
-        new_conj = joinBatches(selectInstances(supportVectors,indices_support_passed), selectInstances(bacthes[numBatch],indices_support_training))
+       #Crear  nuevos lotes                                                                             ¿CAMBIAR batches[numBatch] POR memory?
+        supportVectors = joinBatches(selectInstances(supportVectors,indices_support_passed), selectInstances(batches[numBatch],indices_support_training))
+
+        #Vector edades
+        vOldx2SupportVectors = selectInstances(vOldSupportVectors,indices_support_passed)
+
+        vOldPatrones = collect(batchLength(batches[numBatch]):-1:1)
+        vOldNewSupportVectors   = selectInstances(vOldPatrones,indices_support_training)
+
+        vOldSupportVectors = vcat(vOldx2SupportVectors,vOldNewSupportVectors)
+
     end
     return v_accuracy
 end
