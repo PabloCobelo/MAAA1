@@ -711,7 +711,7 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     #Bucle, se empieza en el segundo elemento xq ya se entreno con el primer batch
     for numBatch in 1:numbatches
         #Calcular accuracy i batch
-        prediction = svm.predict(bacthInputs(batches[numBatch]))
+        prediction = svm.predict(batchInputs(batches[numBatch]))
         real = batchTargets(batches[numBatch])
         accuracy = sum( prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
@@ -731,12 +731,12 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
         svm, _ , (indices_support_passed,indices_support_training) = trainSVM(memory, kernel, C; supportVectors = supportVectors, degree=degree, gamma=gamma, coef0=coef0)
 
        #Crear  nuevos lotes                                                                             ¿CAMBIAR batches[numBatch] POR memory?
-        supportVectors = joinBatches(selectInstances(supportVectors,indices_support_passed), selectInstances(batches[numBatch],indices_support_training))
+        supportVectors = joinBatches(selectInstances(supportVectors,indices_support_passed), selectInstances(memory,indices_support_training))
 
         #Vector edades
         vOldx2SupportVectors = vOldSupportVectors[indices_support_passed]
 
-        vOldPatrones = collect(batchLength(batches[numBatch]):-1:1)
+        vOldPatrones = collect(batchLength(memory):-1:1)
         vOldNewSupportVectors   = vOldPatrones[indices_support_training]
 
         vOldSupportVectors = vcat(vOldx2SupportVectors,vOldNewSupportVectors)
