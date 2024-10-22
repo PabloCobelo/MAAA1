@@ -711,7 +711,7 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
     #Bucle, se empieza en el segundo elemento xq ya se entreno con el primer batch
     for numBatch in 1:numbatches
         #Calcular accuracy i batch
-        prediction = svm.predict(batches[numBatch])
+        prediction = svm.predict(bacthInputs(batches[numBatch]))
         real = batchTargets(batches[numBatch])
         accuracy = sum( prediction .== real) / length(real)
         v_accuracy[numBatch] = accuracy
