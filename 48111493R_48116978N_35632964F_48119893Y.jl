@@ -709,7 +709,7 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
 
 
     #Bucle, se empieza en el segundo elemento xq ya se entreno con el primer batch
-    for numBatch in 2:numbatches
+    for numBatch in 1:numbatches
         #Calcular accuracy i batch
         prediction = svm.predict(batches[numBatch])
         real = batchTargets(batches[numBatch])
